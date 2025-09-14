@@ -16,6 +16,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url =
+                uri("file://${System.getProperty("user.home")}/AndroidStudioProjects/image_enhancer_test")
+        }
     }
 }
 

@@ -1,21 +1,43 @@
 package com.android.imagesuperresolution
 
+import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
+import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.util.Log
+import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,16 +49,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementCallback
+import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementClient
+import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementOptions
+import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementSession
+import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementSessionCallback
+import com.google.android.libraries.mediacommon.effect.enhancement.constants.EnhancementMode
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
-import kotlin.system.measureTimeMillis
+import java.io.InputStream
+import java.util.concurrent.Executors
 
 private const val TAG = "ImageComparisonScreen"
 
-// Data class to hold all information about an image
 data class ImageInfo(
     val bitmap: Bitmap? = null,
     val latency: Long? = null,
@@ -46,81 +72,154 @@ data class ImageInfo(
 @Composable
 fun ImageComparisonScreen(devicePosture: DevicePosture) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
-    // State variables
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var originalImageInfo by remember { mutableStateOf<ImageInfo?>(null) }
     var enhancedImageInfo by remember { mutableStateOf<ImageInfo?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     val processingOptions = listOf("Denoise", "Deblur", "Tonemap", "Upscale")
     var selectedOption by remember { mutableStateOf(processingOptions.first()) }
-    val coroutineScope = rememberCoroutineScope()
 
-    // Photo Picker launcher
+    val enhancementExecutor = remember { Executors.newSingleThreadExecutor() }
+    val enhancementClient = remember(enhancementExecutor) {
+        EnhancementClient.getInstance(enhancementExecutor)
+    }
+    var enhancementSession by remember { mutableStateOf<EnhancementSession?>(null) }
+
+    DisposableEffect(enhancementClient) {
+        Log.d(TAG, "Binding EnhancementClient")
+        enhancementClient.bind()
+        onDispose {
+            Log.d(TAG, "Disposing effects: Releasing session and unbinding client.")
+            enhancementSession?.release()
+            enhancementClient.unbind()
+        }
+    }
+
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
             if (uri != null) {
                 selectedImageUri = uri
-                // Reset state when a new image is picked
                 originalImageInfo = null
                 enhancedImageInfo = null
             }
         }
     )
 
-    // Effect to process the image when a new one is selected or a new option is chosen
     LaunchedEffect(selectedImageUri, selectedOption) {
         selectedImageUri?.let { uri ->
             isLoading = true
+            var processingStartTime: Long = 0
+
             coroutineScope.launch(Dispatchers.IO) {
-                // Load original image
-                val (loadedBitmap, loadTime) = measureTimedValue {
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
-                        } else {
-                            @Suppress("DEPRECATION")
-                            android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                val loadedBitmap = decodeBitmapFromUri(uri, context);
+
+                withContext(Dispatchers.Main) {
+                    originalImageInfo = ImageInfo(bitmap = loadedBitmap)
+                    Log.d(TAG, " Original image loaded")
+                }
+
+                if (loadedBitmap == null) {
+                    Log.d(TAG, " loadedBitmap = null")
+                    withContext(Dispatchers.Main) {
+                        isLoading = false
+                        Log.d(TAG, " isLoading = false ")
+                    }
+                    return@launch
+                }
+
+                if (!EnhancementClient.isEnhancementSupported()) {
+                    Log.e(TAG, "Enhancement is not supported on this device.")
+                    enhancedImageInfo = ImageInfo(bitmap = loadedBitmap) // Fallback
+                    withContext(Dispatchers.Main) { isLoading = false }
+                    return@launch
+                }
+
+                Log.d(TAG, " set options")
+                val options = EnhancementOptions(
+                    Size(loadedBitmap.width, loadedBitmap.height),
+                    EnhancementMode.BITMAP,
+                    tonemapping = false,
+                    deblurAndDenoisePhoto = true,
+                    deblurAndDenoiseVideo = false,
+                    upscaling = true
+                )
+
+                Log.d(TAG, " start sessionCallback")
+                val sessionCallback = object : EnhancementSessionCallback {
+                    override fun onSessionCreated(session: EnhancementSession) {
+                        Log.d(TAG, "onSessionCreated")
+                        enhancementSession = session
+
+                        val processingCallback = object : EnhancementCallback {
+                            override fun onBitmapProcessed(bitmap: Bitmap) {
+                                val processingTime =
+                                    System.currentTimeMillis() - processingStartTime
+                                Log.d(
+                                    TAG,
+                                    "onBitmapProcessed: Success! Latency: ${processingTime}ms"
+                                )
+                                Log.d(TAG, " outputBitmap is $bitmap")
+
+                                coroutineScope.launch(Dispatchers.Main) {
+                                    enhancedImageInfo =
+                                        ImageInfo(bitmap = bitmap, latency = processingTime)
+                                    isLoading = false
+                                }
+                            }
+
+                            override fun onError(statusCode: Int) {
+                                Log.e(TAG, "Processing onError: $statusCode")
+                                coroutineScope.launch(Dispatchers.Main) {
+                                    enhancedImageInfo = ImageInfo(bitmap = loadedBitmap) // Fallback
+                                    isLoading = false
+                                }
+                            }
+
+                            override fun onSurfaceProcessed(timestamp: Long) {
+                                Log.e(TAG, "onSurfaceProcessed")
+                            }
                         }
-                    } catch (e: IOException) {
-                        Log.e(TAG, "Error loading original image", e)
-                        null
+                        processingStartTime = System.currentTimeMillis()
+                        Log.d(TAG, "start session.process")
+                        session.process(
+                            loadedBitmap, options,
+                            processingCallback
+                        )
+                    }
+
+                    override fun onSessionCreationFailed(errorCode: Int) {
+                        Log.e(TAG, "onSessionCreationFailed: error=$errorCode")
+                        coroutineScope.launch(Dispatchers.Main) {
+                            enhancedImageInfo = ImageInfo(bitmap = loadedBitmap) // Fallback
+                            isLoading = false
+                        }
+                    }
+
+                    override fun onSessionDestroyed() {
+                        Log.d(TAG, "onSessionDestroyed")
+                        enhancementSession = null
+                    }
+
+                    override fun onSessionDisconnected(statusCode: Int) {
+                        Log.d(TAG, "onSessionDisconnected: status=$statusCode")
+                        enhancementSession = null
                     }
                 }
-
-                withContext(Dispatchers.Main) {
-                    originalImageInfo = ImageInfo(
-                        bitmap = loadedBitmap,
-                        latency = loadTime,
-                        qualityScore = loadedBitmap?.let { (80..90).random() }
-                    )
-                }
-
-                // --- AI Processing Placeholder ---
-                val (enhancedBitmap, processingTime) = measureTimedValue {
-                    // TODO: Replace this block with your actual AI processing logic.
-                    // This logic runs on a background thread (Dispatchers.IO).
-                    // The 'selectedOption' var holds the user's choice (e.g., "Denoise").
-                    delay(2000) // Simulate network/processing delay
-                    loadedBitmap // For now, just return the original bitmap
-                }
-                // --- End of AI Processing ---
-
-                withContext(Dispatchers.Main) {
-                    enhancedImageInfo = ImageInfo(
-                        bitmap = enhancedBitmap,
-                        latency = processingTime,
-                        qualityScore = enhancedBitmap?.let { (90..100).random() }
-                    )
-                    isLoading = false
-                }
+                Log.d(TAG, "start createSession")
+                enhancementClient.createSession(
+                    context,
+                    options,
+                    sessionCallback,
+                    enhancementExecutor
+                )
             }
         }
     }
 
-    Scaffold {
-        paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -134,13 +233,18 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            Button(onClick = { singlePhotoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+            Button(onClick = {
+                singlePhotoPickerLauncher.launch(
+                    PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
+            }) {
                 Text("Select Image from Gallery")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Multi-choice buttons
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -149,11 +253,9 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
                     OutlinedButton(
                         onClick = { selectedOption = option },
                         shape = RoundedCornerShape(50),
-                        colors = if (selectedOption == option) {
-                            ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        } else {
-                            ButtonDefaults.outlinedButtonColors()
-                        }
+                        colors = if (selectedOption == option) ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ) else ButtonDefaults.outlinedButtonColors()
                     ) {
                         Text(option)
                     }
@@ -162,7 +264,6 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Adaptive layout for images
             val imageContainerModifier = Modifier.weight(1f)
 
             if (devicePosture != DevicePosture.NORMAL) {
@@ -170,20 +271,46 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    ImageDisplay(title = "Original", imageInfo = originalImageInfo, modifier = imageContainerModifier)
-                    ProcessingImageDisplay(title = "Enhanced", imageInfo = enhancedImageInfo, isLoading = isLoading, modifier = imageContainerModifier)
+                    ImageDisplay(
+                        title = "Original",
+                        imageInfo = originalImageInfo,
+                        modifier = imageContainerModifier
+                    )
+                    ProcessingImageDisplay(
+                        title = "Enhanced",
+                        imageInfo = enhancedImageInfo,
+                        isLoading = isLoading,
+                        modifier = imageContainerModifier
+                    )
                 }
             } else {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    ImageDisplay(title = "Original", imageInfo = originalImageInfo, modifier = imageContainerModifier)
-                    ProcessingImageDisplay(title = "Enhanced", imageInfo = enhancedImageInfo, isLoading = isLoading, modifier = imageContainerModifier)
+                    ImageDisplay(
+                        title = "Original",
+                        imageInfo = originalImageInfo,
+                        modifier = imageContainerModifier
+                    )
+                    ProcessingImageDisplay(
+                        title = "Enhanced",
+                        imageInfo = enhancedImageInfo,
+                        isLoading = isLoading,
+                        modifier = imageContainerModifier
+                    )
                 }
             }
         }
     }
+}
+
+private fun decodeBitmapFromUri(uri: Uri, context: Context): Bitmap? {
+    var inputStream: InputStream? = null
+
+    inputStream = context.contentResolver.openInputStream(uri)
+    Log.d(TAG, "decodeBitmapFromUri: uri=$uri")
+    return BitmapFactory.decodeStream(inputStream)
 }
 
 @Composable
@@ -299,11 +426,4 @@ private fun InfoTag(
             )
         }
     }
-}
-
-private inline fun <T> measureTimedValue(block: () -> T): Pair<T, Long> {
-    val start = System.currentTimeMillis()
-    val result = block()
-    val end = System.currentTimeMillis()
-    return result to (end - start)
 }
