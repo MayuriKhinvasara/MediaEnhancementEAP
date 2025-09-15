@@ -12,6 +12,7 @@ import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementCl
 import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementOptions
 import com.google.android.libraries.mediacommon.effect.enhancement.constants.EnhancementMode
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +34,7 @@ data class UiState(
     val originalImage: ImageInfo? = null,
     val enhancedImage: ImageInfo? = null,
     val isLoading: Boolean = false,
-    val selectedOption: String = "Tonemap"
+    val selectedOption: String = "Tonemap" // Reverted to single String
 )
 
 class EnhancementViewModel : ViewModel() {
@@ -43,6 +44,7 @@ class EnhancementViewModel : ViewModel() {
 
     private val enhancementExecutor = Executors.newSingleThreadExecutor()
     private lateinit var enhancementClient: EnhancementClient
+    private var enhancementJob: Job? = null
 
     fun initialize(context: Context) {
         enhancementClient = EnhancementClient.getInstance(enhancementExecutor)
@@ -60,8 +62,8 @@ class EnhancementViewModel : ViewModel() {
     }
 
     fun onImageSelected(uri: Uri, context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // Reset state for new image
+        enhancementJob?.cancel()
+        enhancementJob = viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true, originalImage = null, enhancedImage = null) }
 
             val decodeStartTime = System.currentTimeMillis()
@@ -82,19 +84,19 @@ class EnhancementViewModel : ViewModel() {
     }
 
     fun onOptionSelected(option: String, context: Context) {
-        // Prevent re-processing if the option is already selected and we have a result
-        if (_uiState.value.selectedOption == option && _uiState.value.enhancedImage != null) return
+        // Reverted to single-select logic
+        if (_uiState.value.selectedOption == option) return
 
-        _uiState.update { it.copy(selectedOption = option, isLoading = true) }
+        _uiState.update { it.copy(selectedOption = option) }
 
         val originalBitmap = _uiState.value.originalImage?.bitmap
         if (originalBitmap == null) {
-            Log.e(TAG, "Original bitmap is null, cannot enhance.")
-            _uiState.update { it.copy(isLoading = false) }
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        enhancementJob?.cancel()
+        enhancementJob = viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(isLoading = true) }
             enhanceImage(originalBitmap, context)
         }
     }
@@ -113,7 +115,6 @@ class EnhancementViewModel : ViewModel() {
             val enhancedBitmap = enhancementClient.processBitmapAsync(context, bitmap, options, enhancementExecutor)
             val enhancementLatency = System.currentTimeMillis() - enhancementStartTime
 
-            // Get the original image's decoding latency, default to 0 if it's somehow not available
             val originalDecodeLatency = _uiState.value.originalImage?.latency ?: 0
             val latencyDifference = enhancementLatency - originalDecodeLatency
 
@@ -133,11 +134,10 @@ class EnhancementViewModel : ViewModel() {
         return EnhancementOptions(
             Size(bitmap.width, bitmap.height),
             EnhancementMode.BITMAP,
-            //true,true,false,true
             tonemapping = option == "Tonemap",
-           deblurAndDenoisePhoto = option == "Deblur & DeNoise",
+            deblurAndDenoisePhoto = option == "Deblur & DeNoise",
             deblurAndDenoiseVideo = false, // Not used for photos
-           upscaling = option == "Upscale"
+            upscaling = option == "Upscale"
         )
     }
 

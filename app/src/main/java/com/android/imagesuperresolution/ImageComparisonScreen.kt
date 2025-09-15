@@ -16,14 +16,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,8 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.text.DecimalFormat
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageComparisonScreen(
     devicePosture: DevicePosture,
@@ -74,13 +77,14 @@ fun ImageComparisonScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // --- Header Section --- //
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
             Button(onClick = {
@@ -91,27 +95,32 @@ fun ImageComparisonScreen(
                 Text("Select Image from Gallery")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(processingOptions) { option ->
-                    OutlinedButton(
-                        onClick = { enhancementViewModel.onOptionSelected(option, context) },
-                        shape = RoundedCornerShape(50),
-                        colors = if (uiState.selectedOption == option) ButtonDefaults.outlinedButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        ) else ButtonDefaults.outlinedButtonColors()
-                    ) {
-                        Text(option)
+            // Control row with chips and a small loading indicator
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                LazyRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(processingOptions) { option ->
+                        FilterChip(
+                            selected = uiState.selectedOption == option, // Reverted to single-select
+                            onClick = { enhancementViewModel.onOptionSelected(option, context) },
+                            label = { Text(option) }
+                        )
                     }
+                }
+                // Show a small spinner next to the chips when loading
+                if (uiState.isLoading) {
+                    Spacer(modifier = Modifier.padding(start = 8.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- Image Content Section --- //
             val imageContainerModifier = Modifier.weight(1f)
 
             if (devicePosture != DevicePosture.NORMAL) {
@@ -127,7 +136,7 @@ fun ImageComparisonScreen(
                     ProcessingImageDisplay(
                         title = "Enhanced",
                         imageInfo = uiState.enhancedImage,
-                        isLoading = uiState.isLoading,
+                        isLoading = uiState.isLoading, // Restored isLoading parameter
                         modifier = imageContainerModifier
                     )
                 }
@@ -144,7 +153,7 @@ fun ImageComparisonScreen(
                     ProcessingImageDisplay(
                         title = "Enhanced",
                         imageInfo = uiState.enhancedImage,
-                        isLoading = uiState.isLoading,
+                        isLoading = uiState.isLoading, // Restored isLoading parameter
                         modifier = imageContainerModifier
                     )
                 }
@@ -190,7 +199,7 @@ fun ImageDisplay(
 fun ProcessingImageDisplay(
     title: String,
     imageInfo: ImageInfo?,
-    isLoading: Boolean,
+    isLoading: Boolean, // Restored isLoading parameter
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -222,6 +231,17 @@ fun ProcessingImageDisplay(
     }
 }
 
+// Helper function to format byte count into KB or MB
+private fun formatMemorySize(bytes: Int): String {
+    val kb = bytes / 1024.0
+    val mb = kb / 1024.0
+    val decimalFormat = DecimalFormat("#.##")
+    return when {
+        mb >= 1 -> "${decimalFormat.format(mb)} MB"
+        else -> "${decimalFormat.format(kb)} KB"
+    }
+}
+
 @Composable
 private fun InfoTag(
     title: String,
@@ -243,8 +263,9 @@ private fun InfoTag(
             fontWeight = FontWeight.Bold
         )
         if (bitmap != null) {
+            val memorySize = formatMemorySize(bitmap.byteCount)
             Text(
-                text = "Size: ${bitmap.width}x${bitmap.height}",
+                text = "Size: ${bitmap.width}x${bitmap.height} ($memorySize)",
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
