@@ -1,11 +1,7 @@
 package com.android.imagesuperresolution
 
-import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
-import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,12 +28,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,175 +41,33 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementCallback
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementClient
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementOptions
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementSession
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementSessionCallback
-import com.google.android.libraries.mediacommon.effect.enhancement.constants.EnhancementMode
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.InputStream
-import java.util.concurrent.Executors
+import androidx.lifecycle.viewmodel.compose.viewModel
 
-private const val TAG = "ImageComparisonScreen"
-
-data class ImageInfo(
-    val bitmap: Bitmap? = null,
-    val latency: Long? = null,
-    val qualityScore: Int? = null
-)
 
 @Composable
-fun ImageComparisonScreen(devicePosture: DevicePosture) {
+fun ImageComparisonScreen(
+    devicePosture: DevicePosture,
+    enhancementViewModel: EnhancementViewModel = viewModel() // Get the ViewModel instance
+) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+    val uiState by enhancementViewModel.uiState.collectAsState()
 
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var originalImageInfo by remember { mutableStateOf<ImageInfo?>(null) }
-    var enhancedImageInfo by remember { mutableStateOf<ImageInfo?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    val processingOptions = listOf("Denoise", "Deblur", "Tonemap", "Upscale")
-    var selectedOption by remember { mutableStateOf(processingOptions.first()) }
-
-    val enhancementExecutor = remember { Executors.newSingleThreadExecutor() }
-    val enhancementClient = remember(enhancementExecutor) {
-        EnhancementClient.getInstance(enhancementExecutor)
-    }
-    var enhancementSession by remember { mutableStateOf<EnhancementSession?>(null) }
-
-    DisposableEffect(enhancementClient) {
-        Log.d(TAG, "Binding EnhancementClient")
-        enhancementClient.bind()
-        onDispose {
-            Log.d(TAG, "Disposing effects: Releasing session and unbinding client.")
-            enhancementSession?.release()
-            enhancementClient.unbind()
-        }
+    // Initialize the ViewModel once when the composable enters the screen
+    DisposableEffect(Unit) {
+        enhancementViewModel.initialize(context)
+        onDispose {}
     }
 
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri ->
-            if (uri != null) {
-                selectedImageUri = uri
-                originalImageInfo = null
-                enhancedImageInfo = null
+        onResult = { uri: Uri? ->
+            uri?.let {
+                enhancementViewModel.onImageSelected(it, context)
             }
         }
     )
 
-    LaunchedEffect(selectedImageUri, selectedOption) {
-        selectedImageUri?.let { uri ->
-            isLoading = true
-            var processingStartTime: Long = 0
-
-            coroutineScope.launch(Dispatchers.IO) {
-                val loadedBitmap = decodeBitmapFromUri(uri, context);
-
-                withContext(Dispatchers.Main) {
-                    originalImageInfo = ImageInfo(bitmap = loadedBitmap)
-                    Log.d(TAG, " Original image loaded")
-                }
-
-                if (loadedBitmap == null) {
-                    Log.d(TAG, " loadedBitmap = null")
-                    withContext(Dispatchers.Main) {
-                        isLoading = false
-                        Log.d(TAG, " isLoading = false ")
-                    }
-                    return@launch
-                }
-
-                if (!EnhancementClient.isEnhancementSupported()) {
-                    Log.e(TAG, "Enhancement is not supported on this device.")
-                    enhancedImageInfo = ImageInfo(bitmap = loadedBitmap) // Fallback
-                    withContext(Dispatchers.Main) { isLoading = false }
-                    return@launch
-                }
-
-                Log.d(TAG, " set options")
-                val options = EnhancementOptions(
-                    Size(loadedBitmap.width, loadedBitmap.height),
-                    EnhancementMode.BITMAP,
-                    tonemapping = false,
-                    deblurAndDenoisePhoto = true,
-                    deblurAndDenoiseVideo = false,
-                    upscaling = true
-                )
-
-                Log.d(TAG, " start sessionCallback")
-                val sessionCallback = object : EnhancementSessionCallback {
-                    override fun onSessionCreated(session: EnhancementSession) {
-                        Log.d(TAG, "onSessionCreated")
-                        enhancementSession = session
-
-                        val processingCallback = object : EnhancementCallback {
-                            override fun onBitmapProcessed(bitmap: Bitmap) {
-                                val processingTime =
-                                    System.currentTimeMillis() - processingStartTime
-                                Log.d(
-                                    TAG,
-                                    "onBitmapProcessed: Success! Latency: ${processingTime}ms"
-                                )
-                                Log.d(TAG, " outputBitmap is $bitmap")
-
-                                coroutineScope.launch(Dispatchers.Main) {
-                                    enhancedImageInfo =
-                                        ImageInfo(bitmap = bitmap, latency = processingTime)
-                                    isLoading = false
-                                }
-                            }
-
-                            override fun onError(statusCode: Int) {
-                                Log.e(TAG, "Processing onError: $statusCode")
-                                coroutineScope.launch(Dispatchers.Main) {
-                                    enhancedImageInfo = ImageInfo(bitmap = loadedBitmap) // Fallback
-                                    isLoading = false
-                                }
-                            }
-
-                            override fun onSurfaceProcessed(timestamp: Long) {
-                                Log.e(TAG, "onSurfaceProcessed")
-                            }
-                        }
-                        processingStartTime = System.currentTimeMillis()
-                        Log.d(TAG, "start session.process")
-                        session.process(
-                            loadedBitmap, options,
-                            processingCallback
-                        )
-                    }
-
-                    override fun onSessionCreationFailed(errorCode: Int) {
-                        Log.e(TAG, "onSessionCreationFailed: error=$errorCode")
-                        coroutineScope.launch(Dispatchers.Main) {
-                            enhancedImageInfo = ImageInfo(bitmap = loadedBitmap) // Fallback
-                            isLoading = false
-                        }
-                    }
-
-                    override fun onSessionDestroyed() {
-                        Log.d(TAG, "onSessionDestroyed")
-                        enhancementSession = null
-                    }
-
-                    override fun onSessionDisconnected(statusCode: Int) {
-                        Log.d(TAG, "onSessionDisconnected: status=$statusCode")
-                        enhancementSession = null
-                    }
-                }
-                Log.d(TAG, "start createSession")
-                enhancementClient.createSession(
-                    context,
-                    options,
-                    sessionCallback,
-                    enhancementExecutor
-                )
-            }
-        }
-    }
+    val processingOptions = listOf("Tonemap", "Deblur & DeNoise", "Upscale")
 
     Scaffold { paddingValues ->
         Column(
@@ -235,9 +85,7 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
 
             Button(onClick = {
                 singlePhotoPickerLauncher.launch(
-                    PickVisualMediaRequest(
-                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                    )
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                 )
             }) {
                 Text("Select Image from Gallery")
@@ -251,9 +99,9 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
             ) {
                 items(processingOptions) { option ->
                     OutlinedButton(
-                        onClick = { selectedOption = option },
+                        onClick = { enhancementViewModel.onOptionSelected(option, context) },
                         shape = RoundedCornerShape(50),
-                        colors = if (selectedOption == option) ButtonDefaults.outlinedButtonColors(
+                        colors = if (uiState.selectedOption == option) ButtonDefaults.outlinedButtonColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         ) else ButtonDefaults.outlinedButtonColors()
                     ) {
@@ -273,13 +121,13 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
                 ) {
                     ImageDisplay(
                         title = "Original",
-                        imageInfo = originalImageInfo,
+                        imageInfo = uiState.originalImage,
                         modifier = imageContainerModifier
                     )
                     ProcessingImageDisplay(
                         title = "Enhanced",
-                        imageInfo = enhancedImageInfo,
-                        isLoading = isLoading,
+                        imageInfo = uiState.enhancedImage,
+                        isLoading = uiState.isLoading,
                         modifier = imageContainerModifier
                     )
                 }
@@ -290,13 +138,13 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
                 ) {
                     ImageDisplay(
                         title = "Original",
-                        imageInfo = originalImageInfo,
+                        imageInfo = uiState.originalImage,
                         modifier = imageContainerModifier
                     )
                     ProcessingImageDisplay(
                         title = "Enhanced",
-                        imageInfo = enhancedImageInfo,
-                        isLoading = isLoading,
+                        imageInfo = uiState.enhancedImage,
+                        isLoading = uiState.isLoading,
                         modifier = imageContainerModifier
                     )
                 }
@@ -305,13 +153,6 @@ fun ImageComparisonScreen(devicePosture: DevicePosture) {
     }
 }
 
-private fun decodeBitmapFromUri(uri: Uri, context: Context): Bitmap? {
-    var inputStream: InputStream? = null
-
-    inputStream = context.contentResolver.openInputStream(uri)
-    Log.d(TAG, "decodeBitmapFromUri: uri=$uri")
-    return BitmapFactory.decodeStream(inputStream)
-}
 
 @Composable
 fun ImageDisplay(
@@ -340,7 +181,7 @@ fun ImageDisplay(
                 modifier = Modifier.align(Alignment.TopStart)
             )
         } else {
-            Text(text = "$title Image", modifier = Modifier.align(Alignment.Center))
+            Text(text = "Select an Image", modifier = Modifier.align(Alignment.Center))
         }
     }
 }
@@ -376,7 +217,7 @@ fun ProcessingImageDisplay(
                 modifier = Modifier.align(Alignment.TopStart)
             )
         } else {
-            Text(text = "$title Image", modifier = Modifier.align(Alignment.Center))
+            Text(text = "Enhanced Image", modifier = Modifier.align(Alignment.Center))
         }
     }
 }
@@ -410,8 +251,9 @@ private fun InfoTag(
             )
         }
         if (latency != null) {
+            val label = if (title == "Enhanced") "Latency Diff" else "Latency"
             Text(
-                text = "Latency: ${latency}ms",
+                text = "$label: ${latency}ms",
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
