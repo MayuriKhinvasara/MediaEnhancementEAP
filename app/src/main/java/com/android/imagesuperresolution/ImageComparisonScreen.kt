@@ -105,7 +105,7 @@ fun ImageComparisonScreen(
                 ) {
                     items(processingOptions) { option ->
                         FilterChip(
-                            selected = uiState.selectedOption == option, // Reverted to single-select
+                            selected = uiState.selectedOption == option,
                             onClick = { enhancementViewModel.onOptionSelected(option, context) },
                             label = { Text(option) }
                         )
@@ -136,7 +136,7 @@ fun ImageComparisonScreen(
                     ProcessingImageDisplay(
                         title = "Enhanced",
                         imageInfo = uiState.enhancedImage,
-                        isLoading = uiState.isLoading, // Restored isLoading parameter
+                        isLoading = uiState.isLoading,
                         modifier = imageContainerModifier
                     )
                 }
@@ -153,7 +153,7 @@ fun ImageComparisonScreen(
                     ProcessingImageDisplay(
                         title = "Enhanced",
                         imageInfo = uiState.enhancedImage,
-                        isLoading = uiState.isLoading, // Restored isLoading parameter
+                        isLoading = uiState.isLoading,
                         modifier = imageContainerModifier
                     )
                 }
@@ -199,7 +199,7 @@ fun ImageDisplay(
 fun ProcessingImageDisplay(
     title: String,
     imageInfo: ImageInfo?,
-    isLoading: Boolean, // Restored isLoading parameter
+    isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -252,31 +252,31 @@ private fun InfoTag(
 ) {
     Column(
         modifier = modifier
-            .padding(8.dp)
+            .padding(4.dp) // Reduced padding
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp) // Reduced padding
     ) {
         Text(
             text = title,
             color = Color.White,
-            fontSize = 14.sp,
+            fontSize = 13.sp, // Reduced font size
             fontWeight = FontWeight.Bold
         )
         if (bitmap != null) {
             val memorySize = formatMemorySize(bitmap.byteCount)
             Text(
-                text = "Size: ${bitmap.width}x${bitmap.height} ($memorySize)",
+                text = "Size: $memorySize\nResolution: ${bitmap.width}x${bitmap.height}", // Split into two lines
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 11.sp, // Reduced font size
                 fontWeight = FontWeight.SemiBold
             )
         }
-        if (latency != null) {
-            val label = if (title == "Enhanced") "Latency Diff" else "Latency"
+        // Only show latency for the enhanced image
+        if (latency != null && title != "Original") {
             Text(
-                text = "$label: ${latency}ms",
+                text = "Latency: ${latency}ms", // Reverted to the simple label
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 11.sp, // Reduced font size
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -284,7 +284,7 @@ private fun InfoTag(
             Text(
                 text = "Quality: $quality/100",
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 11.sp, // Reduced font size
                 fontWeight = FontWeight.SemiBold
             )
         }

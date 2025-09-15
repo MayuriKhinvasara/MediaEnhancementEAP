@@ -66,9 +66,7 @@ class EnhancementViewModel : ViewModel() {
         enhancementJob = viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true, originalImage = null, enhancedImage = null) }
 
-            val decodeStartTime = System.currentTimeMillis()
             val originalBitmap = decodeBitmapFromUri(uri, context)
-            val decodeLatency = System.currentTimeMillis() - decodeStartTime
 
             if (originalBitmap == null) {
                 Log.e(TAG, "Failed to decode bitmap from URI.")
@@ -76,7 +74,8 @@ class EnhancementViewModel : ViewModel() {
                 return@launch
             }
 
-            val originalImageInfo = ImageInfo(bitmap = originalBitmap, latency = decodeLatency)
+            // The original image has no enhancement latency.
+            val originalImageInfo = ImageInfo(bitmap = originalBitmap, latency = null)
             _uiState.update { it.copy(originalImage = originalImageInfo) }
 
             enhanceImage(originalBitmap, context)
@@ -115,12 +114,10 @@ class EnhancementViewModel : ViewModel() {
             val enhancedBitmap = enhancementClient.processBitmapAsync(context, bitmap, options, enhancementExecutor)
             val enhancementLatency = System.currentTimeMillis() - enhancementStartTime
 
-            val originalDecodeLatency = _uiState.value.originalImage?.latency ?: 0
-            val latencyDifference = enhancementLatency - originalDecodeLatency
-
+            // Store the pure enhancement latency, not a difference.
             _uiState.update {
                 it.copy(
-                    enhancedImage = ImageInfo(bitmap = enhancedBitmap, latency = latencyDifference),
+                    enhancedImage = ImageInfo(bitmap = enhancedBitmap, latency = enhancementLatency),
                     isLoading = false
                 )
             }
