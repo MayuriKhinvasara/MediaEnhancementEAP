@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                             foldingFeature?.isSeparating == true && foldingFeature.orientation == FoldingFeature.Orientation.VERTICAL ->
                                 DevicePosture.BOOK_MODE
                             foldingFeature?.isSeparating == true && foldingFeature.orientation == FoldingFeature.Orientation.HORIZONTAL ->
-                                DevicePosture.TABLETOP_MODE
+                              DevicePosture.TABLETOP_MODE
                             else ->
                                 DevicePosture.NORMAL
                         }

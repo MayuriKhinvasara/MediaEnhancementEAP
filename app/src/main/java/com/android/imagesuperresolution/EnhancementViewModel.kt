@@ -34,7 +34,7 @@ data class UiState(
     val originalImage: ImageInfo? = null,
     val enhancedImage: ImageInfo? = null,
     val isLoading: Boolean = false,
-    val selectedOption: String = "Tonemap" // Reverted to single String
+    val selectedOptions: Set<String> = setOf("Tonemap") // Use a Set for multi-select
 )
 
 class EnhancementViewModel : ViewModel() {
@@ -74,47 +74,48 @@ class EnhancementViewModel : ViewModel() {
                 return@launch
             }
 
-            // The original image has no enhancement latency.
+            // Only load the original image, do not process.
             val originalImageInfo = ImageInfo(bitmap = originalBitmap, latency = null)
-            _uiState.update { it.copy(originalImage = originalImageInfo) }
-
-            enhanceImage(originalBitmap, context)
+            _uiState.update { it.copy(originalImage = originalImageInfo, isLoading = false) }
         }
     }
 
-    fun onOptionSelected(option: String, context: Context) {
-        // Reverted to single-select logic
-        if (_uiState.value.selectedOption == option) return
-
-        _uiState.update { it.copy(selectedOption = option) }
-
-        val originalBitmap = _uiState.value.originalImage?.bitmap
-        if (originalBitmap == null) {
-            return
+    // Only updates the state, does not trigger processing
+    fun onOptionSelected(option: String) {
+        val currentOptions = _uiState.value.selectedOptions
+        val newOptions = if (option in currentOptions) {
+            currentOptions - option
+        } else {
+            currentOptions + option
         }
+        _uiState.update { it.copy(selectedOptions = newOptions) }
+    }
+
+    // Called by the "Enhance" button
+    fun enhanceImage(context: Context) {
+        val originalBitmap = _uiState.value.originalImage?.bitmap ?: return
 
         enhancementJob?.cancel()
         enhancementJob = viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true) }
-            enhanceImage(originalBitmap, context)
+            processImage(originalBitmap, context)
         }
     }
 
-    private suspend fun enhanceImage(bitmap: Bitmap, context: Context) {
+    private suspend fun processImage(bitmap: Bitmap, context: Context) {
         if (!EnhancementClient.isEnhancementSupported()) {
             Log.e(TAG, "Enhancement is not supported on this device.")
             _uiState.update { it.copy(enhancedImage = ImageInfo(bitmap = bitmap), isLoading = false) }
             return
         }
 
-        val options = getEnhancementOptionsFor(bitmap, _uiState.value.selectedOption)
+        val options = getEnhancementOptionsFor(bitmap, _uiState.value.selectedOptions)
 
         try {
             val enhancementStartTime = System.currentTimeMillis()
             val enhancedBitmap = enhancementClient.processBitmapAsync(context, bitmap, options, enhancementExecutor)
             val enhancementLatency = System.currentTimeMillis() - enhancementStartTime
 
-            // Store the pure enhancement latency, not a difference.
             _uiState.update {
                 it.copy(
                     enhancedImage = ImageInfo(bitmap = enhancedBitmap, latency = enhancementLatency),
@@ -127,14 +128,14 @@ class EnhancementViewModel : ViewModel() {
         }
     }
 
-    private fun getEnhancementOptionsFor(bitmap: Bitmap, option: String): EnhancementOptions {
+    private fun getEnhancementOptionsFor(bitmap: Bitmap, selectedOptions: Set<String>): EnhancementOptions {
         return EnhancementOptions(
             Size(bitmap.width, bitmap.height),
             EnhancementMode.BITMAP,
-            tonemapping = option == "Tonemap",
-            deblurAndDenoisePhoto = option == "Deblur & DeNoise",
+            tonemapping = "Tonemap" in selectedOptions,
+            deblurAndDenoisePhoto = "Deblur & DeNoise" in selectedOptions,
             deblurAndDenoiseVideo = false, // Not used for photos
-            upscaling = option == "Upscale"
+            upscaling = "Upscale" in selectedOptions
         )
     }
 

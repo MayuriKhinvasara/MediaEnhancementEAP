@@ -97,7 +97,7 @@ fun ImageComparisonScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Control row with chips and a small loading indicator
+            // Control row with chips and Enhance button
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 LazyRow(
                     modifier = Modifier.weight(1f),
@@ -105,16 +105,15 @@ fun ImageComparisonScreen(
                 ) {
                     items(processingOptions) { option ->
                         FilterChip(
-                            selected = uiState.selectedOption == option,
-                            onClick = { enhancementViewModel.onOptionSelected(option, context) },
+                            selected = option in uiState.selectedOptions,
+                            onClick = { enhancementViewModel.onOptionSelected(option) },
                             label = { Text(option) }
                         )
                     }
                 }
-                // Show a small spinner next to the chips when loading
-                if (uiState.isLoading) {
-                    Spacer(modifier = Modifier.padding(start = 8.dp))
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.padding(start = 8.dp))
+                Button(onClick = { enhancementViewModel.enhanceImage(context) }) {
+                    Text("AI Enhance")
                 }
             }
 
@@ -252,31 +251,31 @@ private fun InfoTag(
 ) {
     Column(
         modifier = modifier
-            .padding(4.dp) // Reduced padding
+            .padding(1.dp) 
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp) // Reduced padding
+            .padding(horizontal = 2.dp, vertical = 0.dp), 
+        verticalArrangement = Arrangement.spacedBy(0.dp) 
     ) {
         Text(
             text = title,
             color = Color.White,
-            fontSize = 13.sp, // Reduced font size
+            fontSize = 9.sp,
             fontWeight = FontWeight.Bold
         )
         if (bitmap != null) {
             val memorySize = formatMemorySize(bitmap.byteCount)
             Text(
-                text = "Size: $memorySize\nResolution: ${bitmap.width}x${bitmap.height}", // Split into two lines
+                text = "$memorySize, ${bitmap.width}x${bitmap.height}",
                 color = Color.White,
-                fontSize = 11.sp, // Reduced font size
+                fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
-        // Only show latency for the enhanced image
         if (latency != null && title != "Original") {
             Text(
-                text = "Latency: ${latency}ms", // Reverted to the simple label
+                text = "AI Latency: ${latency}ms",
                 color = Color.White,
-                fontSize = 11.sp, // Reduced font size
+                fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -284,7 +283,7 @@ private fun InfoTag(
             Text(
                 text = "Quality: $quality/100",
                 color = Color.White,
-                fontSize = 11.sp, // Reduced font size
+                fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
