@@ -1,8 +1,11 @@
 package com.android.imagesuperresolution
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,8 +30,11 @@ enum class DevicePosture {
 }
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val viewModel: EnhancementViewModel by viewModels()
 
         var devicePosture by mutableStateOf(DevicePosture.NORMAL)
 
@@ -47,7 +53,7 @@ class MainActivity : ComponentActivity() {
                             foldingFeature?.isSeparating == true && foldingFeature.orientation == FoldingFeature.Orientation.VERTICAL ->
                                 DevicePosture.BOOK_MODE
                             foldingFeature?.isSeparating == true && foldingFeature.orientation == FoldingFeature.Orientation.HORIZONTAL ->
-                              DevicePosture.TABLETOP_MODE
+                                DevicePosture.TABLETOP_MODE
                             else ->
                                 DevicePosture.NORMAL
                         }
@@ -62,7 +68,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ImageComparisonScreen(devicePosture = devicePosture)
+                    ImageComparisonScreen(
+                        devicePosture = devicePosture,
+                        enhancementViewModel = viewModel
+                    )
                 }
             }
         }

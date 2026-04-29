@@ -2,15 +2,20 @@ package com.android.imagesuperresolution
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementCallback
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementClient
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementOptions
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementSession
-import com.google.android.libraries.mediacommon.effect.enhancement.EnhancementSessionCallback
+import com.google.android.gms.common.api.Status
+import com.google.android.gms.media.effect.enhancement.EnhancementCallback
+import com.google.android.gms.media.effect.enhancement.EnhancementClient
+import com.google.android.gms.media.effect.enhancement.EnhancementOptions
+import com.google.android.gms.media.effect.enhancement.EnhancementSession
+import com.google.android.gms.media.effect.enhancement.EnhancementSessionCallback
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import android.util.Log
+
 
 class EnhancementFailedException(val errorCode: Int, message: String) : Exception(message)
 
@@ -27,65 +32,105 @@ class EnhancementFailedException(val errorCode: Int, message: String) : Exceptio
  * @return The enhanced [Bitmap] on success.
  * @throws [EnhancementFailedException] if any step of the process fails.
  */
-suspend fun EnhancementClient.processBitmapAsync(
-    context: Context,
-    bitmap: Bitmap,
+/**
+ * Extension to create an enhancement session asynchronously.
+ */
+suspend fun EnhancementClient.createSessionAsync(
     options: EnhancementOptions,
     executor: Executor
-): Bitmap = suspendCancellableCoroutine { continuation ->
-    var session: EnhancementSession? = null
-
-    val sessionCallback = object : EnhancementSessionCallback {
-        override fun onSessionCreated(session: EnhancementSession) {
-           // session = session
-
-            // When the coroutine is cancelled, ensure we release the session.
-            continuation.invokeOnCancellation { session.release() }
-
-            val processingCallback = object : EnhancementCallback {
-                override fun onBitmapProcessed(outputBitmap: Bitmap) {
-                    continuation.resume(outputBitmap)
-                    session.release()
-                }
-
-                override fun onError(statusCode: Int) {
-                    continuation.resumeWithException(
-                        EnhancementFailedException(statusCode, "Processing failed in onBitmapProcessed. $statusCode")
-                    )
-                    session.release()
-                }
-
-                override fun onSurfaceProcessed(timestamp: Long) { /* Not used in bitmap flow */ }
+): EnhancementSession = withContext(Dispatchers.Main) {
+    suspendCancellableCoroutine { continuation ->
+        val callback = object : EnhancementSessionCallback {
+            override fun onSessionCreated(session: EnhancementSession) {
+                continuation.resume(session)
             }
 
-            session.process(bitmap, options, processingCallback)
+            override fun onSessionCreationFailed(status: Status) {
+                continuation.resumeWithException(
+                    Exception("Session creation failed: ${status.statusMessage} (${status.statusCode})")
+                )
+            }
+
+            override fun onSessionDestroyed() {
+                // Log or handle if needed
+            }
+
+            override fun onSessionDisconnected(status: Status) {
+                // Log or handle if needed
+            }
         }
 
-        override fun onSessionCreationFailed(errorCode: Int) {
+        this@createSessionAsync.createSession(options, callback)
+            .addOnFailureListener(executor) { e ->
+                if (continuation.isActive) {
+                    continuation.resumeWithException(e)
+                }
+            }
+    }
+}
+
+/**
+ * Extension to process a bitmap using an existing session.
+ */
+suspend fun EnhancementSession.processBitmapAsync(
+    bitmap: Bitmap,
+    options: EnhancementOptions
+): Bitmap = suspendCancellableCoroutine { continuation ->
+    val callback = object : EnhancementCallback {
+        override fun onBitmapProcessed(bitmap: Bitmap) {
+            continuation.resume(bitmap)
+        }
+
+        override fun onError(statusCode: Int) {
             continuation.resumeWithException(
-                EnhancementFailedException(errorCode, "Session creation failed $errorCode")
+                Exception("Processing failed with status code: $statusCode")
             )
         }
 
-        override fun onSessionDestroyed() {
-            session = null
-            if (continuation.isActive) {
-                continuation.resumeWithException(
-                    EnhancementFailedException(-1, "Session was destroyed unexpectedly. ErrorCode -1")
-                )
-            }
-        }
+        override fun onSurfaceProcessed(timestamp: Long) { /* Not used in bitmap flow */ }
+    }
 
-        override fun onSessionDisconnected(statusCode: Int) {
-            session = null
-            if (continuation.isActive) {
-                continuation.resumeWithException(
-                    EnhancementFailedException(statusCode, "Session disconnected unexpectedly. $statusCode")
-                )
-            }
+    this.process(bitmap, options, callback)
+}
+
+suspend fun EnhancementClient.installModuleAsync(onProgress: (Int) -> Unit): Boolean = suspendCancellableCoroutine { continuation ->
+    val callback = object : EnhancementClient.InstallStatusCallback {
+        override fun onDownloadPending() { Log.d("EnhancementUtils", "onDownloadPending") }
+        override fun onDownloadStart() { Log.d("EnhancementUtils", "onDownloadStart") }
+        override fun onDownloadPaused() { Log.d("EnhancementUtils", "onDownloadPaused") }
+        override fun onDownloadProgressUpdate(progress: Int) {
+            Log.d("EnhancementUtils", "onDownloadProgressUpdate: $progress")
+            onProgress(progress)
+        }
+        override fun onDownloadComplete() { Log.d("EnhancementUtils", "onDownloadComplete") }
+        override fun onInstalled() { Log.d("EnhancementUtils", "onInstalled") }
+        override fun onCancelled() {
+            Log.d("EnhancementUtils", "onCancelled")
+            if (continuation.isActive) continuation.resume(false)
+        }
+        override fun onError(description: String) {
+            Log.e("EnhancementUtils", "onError: $description")
+            if (continuation.isActive) continuation.resumeWithException(Exception(description))
         }
     }
 
-    // Start the entire process by creating a session
-    this.createSession(context, options, sessionCallback, executor)
+    this.installModule(callback)
+        .addOnSuccessListener { result ->
+            if (continuation.isActive) continuation.resume(result)
+        }
+        .addOnFailureListener { e ->
+            if (continuation.isActive) continuation.resumeWithException(e)
+        }
+}
+
+suspend fun EnhancementClient.isModuleInstalledAsync(): Boolean = suspendCancellableCoroutine { continuation ->
+    this.isModuleInstalled()
+        .addOnSuccessListener { result -> continuation.resume(result) }
+        .addOnFailureListener { e -> continuation.resumeWithException(e) }
+}
+
+suspend fun EnhancementClient.isDeviceSupportedAsync(): Boolean = suspendCancellableCoroutine { continuation ->
+    this.isDeviceSupported()
+        .addOnSuccessListener { result -> continuation.resume(result) }
+        .addOnFailureListener { e -> continuation.resumeWithException(e) }
 }

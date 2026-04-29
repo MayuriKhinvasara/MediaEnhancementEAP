@@ -2,35 +2,19 @@ package com.android.imagesuperresolution
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,28 +27,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.media.effect.enhancement.EnhancementMode
 import java.text.DecimalFormat
 
-
+@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageComparisonScreen(
     devicePosture: DevicePosture,
-    enhancementViewModel: EnhancementViewModel = viewModel() // Get the ViewModel instance
+    enhancementViewModel: EnhancementViewModel
 ) {
     val context = LocalContext.current
     val uiState by enhancementViewModel.uiState.collectAsState()
-
-    // Initialize the ViewModel once when the composable enters the screen
-    DisposableEffect(Unit) {
-        enhancementViewModel.initialize(context)
-        onDispose {}
-    }
 
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri: Uri? ->
             uri?.let {
+                enhancementViewModel.setEnhancementMode(EnhancementMode.BITMAP)
                 enhancementViewModel.onImageSelected(it, context)
             }
         }
@@ -80,7 +60,6 @@ fun ImageComparisonScreen(
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- Header Section --- //
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displayLarge,
@@ -95,10 +74,19 @@ fun ImageComparisonScreen(
                 Text("Select Image from Gallery")
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Module Status: ${uiState.moduleStatus}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Control row with chips and Enhance button
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 LazyRow(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -112,14 +100,48 @@ fun ImageComparisonScreen(
                     }
                 }
                 Spacer(modifier = Modifier.padding(start = 8.dp))
-                Button(onClick = { enhancementViewModel.enhanceImage(context) }) {
+                Button(
+                    onClick = { enhancementViewModel.enhanceImage() },
+                    enabled = uiState.isModuleReady && !uiState.isLoading && uiState.originalImage?.bitmap != null
+                ) {
                     Text("AI Enhance")
                 }
             }
 
+            if (uiState.isModuleInstalling) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    LinearProgressIndicator(
+                        progress = { uiState.moduleInstallProgress / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Downloading Enhancement module only for the first time (${uiState.moduleInstallProgress}%)",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            if (uiState.moduleInstallError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uiState.moduleInstallError ?: "Unknown error",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (uiState.enhancementError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uiState.enhancementError ?: "Unknown enhancement error",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Image Content Section --- //
             val imageContainerModifier = Modifier.weight(1f)
 
             if (devicePosture != DevicePosture.NORMAL) {
@@ -136,6 +158,7 @@ fun ImageComparisonScreen(
                         title = "Enhanced",
                         imageInfo = uiState.enhancedImage,
                         isLoading = uiState.isLoading,
+                        hasError = uiState.enhancementError != null,
                         modifier = imageContainerModifier
                     )
                 }
@@ -153,6 +176,7 @@ fun ImageComparisonScreen(
                         title = "Enhanced",
                         imageInfo = uiState.enhancedImage,
                         isLoading = uiState.isLoading,
+                        hasError = uiState.enhancementError != null,
                         modifier = imageContainerModifier
                     )
                 }
@@ -199,6 +223,7 @@ fun ProcessingImageDisplay(
     title: String,
     imageInfo: ImageInfo?,
     isLoading: Boolean,
+    hasError: Boolean,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -210,6 +235,13 @@ fun ProcessingImageDisplay(
     ) {
         if (isLoading) {
             CircularProgressIndicator()
+        } else if (hasError) {
+            Text(
+                text = "Enhancement Failed",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.align(Alignment.Center)
+            )
         } else if (imageInfo?.bitmap != null) {
             Image(
                 bitmap = imageInfo.bitmap.asImageBitmap(),
@@ -251,10 +283,10 @@ private fun InfoTag(
 ) {
     Column(
         modifier = modifier
-            .padding(1.dp) 
+            .padding(1.dp)
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 2.dp, vertical = 0.dp), 
-        verticalArrangement = Arrangement.spacedBy(0.dp) 
+            .padding(horizontal = 2.dp, vertical = 0.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text(
             text = title,

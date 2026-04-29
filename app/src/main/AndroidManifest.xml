@@ -28,6 +28,22 @@
         <uses-native-library
             android:name="libOpenCL.so"
             android:required="false" />
+        <uses-native-library
+            android:name="libOpenCL-car.so"
+            android:required="false" />
+        <uses-native-library
+            android:name="libOpenCL-pixel.so"
+            android:required="false" />
+        <uses-native-library
+            android:name="libGLESv2.so"
+            android:required="false" />
+        <uses-native-library
+            android:name="libGLESv3.so"
+            android:required="false" />
+
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
     </application>
 
 </manifest>

@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+
+
 android {
     namespace = "com.android.imagesuperresolution"
     compileSdk = 36
@@ -30,13 +32,7 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+
     buildFeatures {
         compose = true
     }
@@ -71,5 +67,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     //ImageSuperResolution
-    implementation(libs.mediacommoneffectenhancement)
+    implementation(libs.play.services.media.effect.enhancement)
+    implementation("com.google.android.gms:play-services-basement:18.9.0")
+    implementation("com.google.android.gms:play-services-base:18.5.0")
+    implementation("com.google.android.gms:play-services-tasks:18.2.0")
+}
+
+kotlin {
+    jvmToolchain(17)
 }

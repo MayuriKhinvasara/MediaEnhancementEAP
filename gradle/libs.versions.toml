@@ -1,6 +1,6 @@
 [versions]
 agp = "8.4.1"
-kotlin = "2.0.0"
+kotlin = "2.3.21"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -8,8 +8,8 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.3"
 activityCompose = "1.9.0"
 composeBom = "2024.06.00"
-mediacommoneffectenhancement = "0.0.3"
 window = "1.3.0"
+playServicesMediaEffectEnhancement = "16.0.0-beta03"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,7 +29,7 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
-mediacommoneffectenhancement = { module = "com.google.android.libraries.mediacommon.effect.enhancement:mediacommoneffectenhancement", version.ref = "mediacommoneffectenhancement" }
+play-services-media-effect-enhancement = { module = "com.google.android.gms:play-services-media-effect-enhancement", version.ref = "playServicesMediaEffectEnhancement" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
