@@ -87,6 +87,12 @@ suspend fun EnhancementSession.processBitmapAsync(
             )
         }
 
+        override fun onCancelled(statusCode: Int) {
+            continuation.resumeWithException(
+                Exception("Processing cancelled with status code: $statusCode")
+            )
+        }
+
         override fun onSurfaceProcessed(timestamp: Long) { /* Not used in bitmap flow */ }
     }
 
