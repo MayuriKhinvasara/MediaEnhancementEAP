@@ -137,9 +137,13 @@ class EnhancementViewModel(application: Application) : AndroidViewModel(applicat
         val originalBitmap = _uiState.value.originalImage?.bitmap ?: return null
 
         return try {
+            BenchmarkTracker.recordSessionCreateStart()
             val options = getEnhancementOptionsFor(originalBitmap, _uiState.value.selectedOptions)
-            enhancementClient.createSessionAsync(options, enhancementExecutor)
+            val session = enhancementClient.createSessionAsync(options, enhancementExecutor)
+            BenchmarkTracker.recordSessionCreateEnd(true)
+            session
         } catch (e: Exception) {
+            BenchmarkTracker.recordSessionCreateEnd(false)
             _uiState.update { it.copy(enhancementError = "Failed to create session: ${e.message}") }
             null
         }

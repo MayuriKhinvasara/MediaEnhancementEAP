@@ -26,14 +26,14 @@ class EnhancementViewModelBenchmarkTest {
     val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_MEDIA_IMAGES
+        Manifest.permission.READ_MEDIA_IMAGES,
     )
 
     @Test
     fun benchmarkEnhancementViewModel() {
         runBlocking {
             val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-            val application = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
+            val application = ApplicationProvider.getApplicationContext<Application>()
             
             // Helper to run shell command and block until finished
             fun runShell(cmd: String) {
@@ -127,7 +127,7 @@ class EnhancementViewModelBenchmarkTest {
         val viewModel = EnhancementViewModel(application)
         
         // Wait for module to be ready
-        viewModel.uiState.first { it.isModuleReady || it.moduleInstallError != null }
+        viewModel.uiState.first { (it.isModuleReady || it.moduleInstallError != null) }
         
         // Unselect default Tonemap and set the exact ones we want if needed. 
         // Tonemap is already set by default, so we just toggle Upscale Option.
