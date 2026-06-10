@@ -50,7 +50,7 @@ fun ImageComparisonScreen(
         }
     )
 
-    val processingOptions = listOf("Tonemap", "Deblur & DeNoise", "Upscale")
+    val processingOptions = listOf("Tonemap", "Deblur & DeNoise", "Image Upscale", "Video Upscale")
 
     Scaffold { paddingValues ->
         Column(
@@ -100,11 +100,20 @@ fun ImageComparisonScreen(
                     }
                 }
                 Spacer(modifier = Modifier.padding(start = 8.dp))
-                Button(
-                    onClick = { enhancementViewModel.enhanceImage() },
-                    enabled = uiState.isModuleReady && !uiState.isLoading && uiState.originalImage?.bitmap != null
-                ) {
-                    Text("AI Enhance")
+                if (uiState.isLoading) {
+                    Button(
+                        onClick = { enhancementViewModel.cancelOperation() },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Cancel")
+                    }
+                } else {
+                    Button(
+                        onClick = { enhancementViewModel.enhanceImage() },
+                        enabled = uiState.isModuleReady && uiState.originalImage?.bitmap != null
+                    ) {
+                        Text("AI Enhance")
+                    }
                 }
             }
 

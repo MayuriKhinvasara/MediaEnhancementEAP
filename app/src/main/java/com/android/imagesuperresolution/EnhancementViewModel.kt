@@ -16,6 +16,7 @@ import com.google.android.gms.media.effect.enhancement.EnhancementMode
 import com.google.android.gms.media.effect.enhancement.EnhancementOptions
 import com.google.android.gms.media.effect.enhancement.EnhancementSession
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,6 +57,7 @@ class EnhancementViewModel(application: Application) : AndroidViewModel(applicat
     private val enhancementClient: EnhancementClient = Enhancement.getClient(application)
     private val enhancementExecutor = Executors.newSingleThreadExecutor()
     private var enhancementSession: EnhancementSession? = null
+    private var activeJob: Job? = null
 
     init {
         checkAndInstallModule()
@@ -206,13 +208,30 @@ class EnhancementViewModel(application: Application) : AndroidViewModel(applicat
     fun enhanceImage() {
         val originalBitmap = _uiState.value.originalImage?.bitmap ?: return
 
-        viewModelScope.launch(Dispatchers.IO) {
+        activeJob = viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true, enhancementError = null) }
             try {
                 processImage(originalBitmap)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    fun cancelOperation() {
+        Log.e(TAG, "Cancel start")
+        BenchmarkTracker.recordCancelStart()
+        activeJob?.cancel()
+        activeJob = null
+        enhancementSession?.release()
+        enhancementSession = null
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                enhancedImage = null,
+                enhancementError = null
+            )
         }
     }
 
