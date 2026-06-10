@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2721b212-cbb4-4574-b919-cbfc31a05471" name="Changes" comment="Update Media Effect Enhancement to 16.0.0-beta04&#10;&#10;This commit updates the `playServicesMediaEffectEnhancement` dependency version in the version catalog.&#10;&#10;Key changes:&#10;- **Dependency Update**: Bumped `playServicesMediaEffectEnhancement` from `16.0.0-beta03` to `16.0.0-beta04` in `gradle/libs.versions.toml`.">
+      <change afterPath="$PROJECT_DIR$/app/src/androidTest/java/com/android/imagesuperresolution/EnhancementViewModelBenchmarkTest.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/android/imagesuperresolution/BenchmarkTracker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/android/imagesuperresolution/EnhancementViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/android/imagesuperresolution/EnhancementViewModel.kt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[PhysicalDevice::serial=53071FDCH000GS]" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="ImageSuperResolution" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="GenerateSignedApkSettings">
+    <option name="BUILD_TARGET_KEY" value="apk" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;MayuriKhinvasara&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:MayuriKhinvasara/Media-Enhancement.git&quot;,
+    &quot;accountId&quot;: &quot;cbe85998-719b-4c83-aaf8-96e62100dc8b&quot;
+  }
+}</component>
+  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="$USER_HOME$/.gradle/wrapper/dists/gradle-8.13-bin/5xuhj0ry160q40clulazy9h7d/gradle-8.13" javaHome="$APPLICATION_HOME_DIR$/jbr/Contents/Home" gradleVersion="8.13" />
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="3D00Jd8WEfWlXGhOFVFkgr0u6Tz" />
+  <component name="ProjectReloadState">
+    <option name="STATE" value="1" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Android App.app.executor": "Run",
+    "Android Instrumented Tests.EnhancementViewModelBenchmarkTest.executor": "Run",
+    "ApkExportedModule": "ImageSuperResolution.app",
+    "Gradle.Configure Daemon JVM Criteria.executor": "Run",
+    "Gradle.Download Sources.executor": "Run",
+    "GradleDaemonJvmCriteriaMigrationNotification.isNotificationDisabled": "true",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
+    "git-widget-placeholder": "benchmark-automated",
+    "kotlin-language-version-configured": "true",
+    "settings.editor.selected.configurable": "editor.preferences.fonts.default"
+  }
+}]]></component>
+  <component name="RunManager" selected="Android App.app">
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
+      <module name="ImageSuperResolution.app" />
+      <option name="ANDROID_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="ALLOW_ASSUME_VERIFIED" value="false" />
+      <option name="CLEAR_APP_STORAGE" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="RESTORE_ENABLED" value="false" />
+      <option name="RESTORE_FILE" value="" />
+      <option name="RESTORE_FRESH_INSTALL_ONLY" value="false" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Hybrid>
+      <Java>
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Java>
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EnhancementViewModelBenchmarkTest" type="AndroidTestRunConfigurationType" factoryName="Android Instrumented Tests" temporary="true" nameIsGenerated="true">
+      <module name="ImageSuperResolution.app" />
+      <option name="ANDROID_TEST_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
+      <option name="TESTING_TYPE" value="2" />
+      <option name="METHOD_NAME" value="" />
+      <option name="CLASS_NAME" value="com.android.imagesuperresolution.EnhancementViewModelBenchmarkTest" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="TEST_NAME_REGEX" value="" />
+      <option name="INSTRUMENTATION_RUNNER_CLASS" value="" />
+      <option name="EXTRA_OPTIONS" value="" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Hybrid>
+      <Java>
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Java>
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Android Instrumented Tests.EnhancementViewModelBenchmarkTest" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2721b212-cbb4-4574-b919-cbfc31a05471" name="Changes" comment="" />
+      <created>1777403608764</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777403608764</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Migrate to Play Services Media Effect Enhancement and implement on-demand module management&#10;&#10;This commit migrates the image enhancement implementation from a local library to the Google Play Services (GMS) `play-services-media-effect-enhancement` library. It introduces a robust workflow for checking device support, handling on-demand module installation, and managing the lifecycle of enhancement sessions.&#10;&#10;The key changes include:&#10;- **GMS Library Integration**: Updated dependencies to use `play-services-media-effect-enhancement`. The `EnhancementUtils.kt` file has been overhauled to wrap GMS Tasks in coroutines using `suspendCancellableCoroutine`, providing a more idiomatic way to handle session creation and bitmap processing.&#10;- **Dynamic Module Installation**: Implemented logic in `EnhancementViewModel` to check if the required enhancement module is installed. It now supports downloading the module on-demand with progress tracking, ensuring the app remains functional even if the ML features are not pre-installed.&#10;- **Improved Session Management**: Refactored the enhancement logic to use `EnhancementSession`. Sessions are created asynchronously and properly released when a new image is selected or the ViewModel is cleared, preventing memory leaks and resource contention.&#10;- **Enhanced UI Feedback**: The `ImageComparisonScreen` now displays the module status (e.g., &quot;Checking support,&quot; &quot;Installing&quot;) and provides a `LinearProgressIndicator` during the initial download. Specific error messages are now surface-level for both installation and processing failures.&#10;- **Native Library &amp; Manifest Updates**: Added required `uses-native-library` entries for OpenCL and GLES to the manifest to ensure compatibility across different hardware architectures (including Pixel and Automotive).&#10;- **Tooling Updates**: Updated the Kotlin version and moved the JVM toolchain to version 17 to align with modern development standards.">
+      <option name="closed" value="true" />
+      <created>1777442717115</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1777442717115</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Implement job cancellation and UI controls for image enhancement&#10;&#10;This commit introduces the ability for users to cancel ongoing image enhancement operations and improves task management within the ViewModel to prevent race conditions.&#10;&#10;The key changes include:&#10;- **Active Job Tracking**: The `EnhancementViewModel` now maintains a reference to the `activeJob` for image selection and processing tasks. This ensures that selecting a new image automatically cancels any previous, unfinished operations.&#10;- **Manual Cancellation Logic**: Added a `cancelOperation` function to the ViewModel. It explicitly cancels the current coroutine job, releases the `EnhancementSession`, and resets the UI state to a non-loading, clean state.&#10;- **Context-Aware Action Button**: The UI in `ImageComparisonScreen` now dynamically toggles between an &quot;AI Enhance&quot; button and a &quot;Cancel&quot; button based on the current loading state. The &quot;Cancel&quot; button uses the error color scheme to provide a clear visual cue for stopping the process.&#10;- **Robust State Management**: Refined the loading logic to ensure the UI remains responsive and consistent when operations are interrupted or canceled.">
+      <option name="closed" value="true" />
+      <created>1779880012720</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1779880012720</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Implement job cancellation and UI controls for image enhancement&#10;&#10;This commit introduces the ability for users to cancel ongoing image enhancement operations and improves task management within the ViewModel to prevent race conditions.&#10;&#10;The key changes include:&#10;- **Active Job Tracking**: The `EnhancementViewModel` now maintains a reference to the `activeJob` for image selection and processing tasks. This ensures that selecting a new image automatically cancels any previous, unfinished operations.&#10;- **Manual Cancellation Logic**: Added a `cancelOperation` function to the ViewModel. It explicitly cancels the current coroutine job, releases the `EnhancementSession`, and resets the UI state to a non-loading, clean state.&#10;- **Context-Aware Action Button**: The UI in `ImageComparisonScreen` now dynamically toggles between an &quot;AI Enhance&quot; button and a &quot;Cancel&quot; button based on the current loading state. The &quot;Cancel&quot; button uses the error color scheme to provide a clear visual cue for stopping the process.&#10;- **Robust State Management**: Refined the loading logic to ensure the UI remains responsive and consistent when operations are interrupted or canceled.">
+      <option name="closed" value="true" />
+      <created>1780399488047</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1780399488048</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Integrate BenchmarkTracker for performance monitoring&#10;&#10;This commit integrates the `BenchmarkTracker` utility into the image enhancement workflow to measure and log performance metrics across the session lifecycle.&#10;&#10;Key changes include:&#10;- **Performance Instrumentation**: Added tracking points in `EnhancementViewModel` to record timestamps for session creation, bitmap processing, and resource release.&#10;- **Metadata Tracking**: Enhanced the benchmarking logic to capture input/output resolutions and selected enhancement options, providing context for the latency metrics.&#10;- **Reporting Logic**: Updated `BenchmarkTracker` to expose the `printSummary` function and automatically clear previous data when a new session begins.&#10;- **Lifecycle Hooks**: Integrated tracking for cancellation and session destruction within `EnhancementUtils` and the ViewModel's `onCleared` and `cancelOperation` methods.&#10;- **Device Support**: Updated IDE configuration to include support for Pixel Tablet (API 36) in device streaming.">
+      <option name="closed" value="true" />
+      <created>1780428607725</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1780428607725</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Refactor image enhancement to use callback-based SDK APIs&#10;&#10;This commit transitions the image enhancement logic from a suspend-based wrapper to the underlying callback-based API provided by the enhancement library. This ensures more direct integration with the SDK's lifecycle and processing model.&#10;&#10;The key changes include:&#10;- **Callback-driven Processing**: Refactored `processImage` to use `EnhancementCallback`. The UI state updates for the enhanced bitmap and loading status are now handled within the `onBitmapProcessed` callback.&#10;- **Asynchronous Session Creation**: Introduced `createSessionCallback`, which utilizes `EnhancementSessionCallback` to manage the asynchronous creation of an `EnhancementSession`.&#10;- **Explicit Session Release**: Added a `releaseSession` function to allow for explicit cleanup of the enhancement session and related UI state.&#10;- **Enhanced Lifecycle Management**: Updated `cancelOperation` and `onImageSelected` to ensure sessions are properly released and benchmark metrics are recorded accurately during cancellations.&#10;- **Improved Benchmarking**: Refined the placement of `BenchmarkTracker` calls to more accurately capture session creation overhead and pure enhancement latency.&#10;- **Logging and Debugging**: Added targeted logging for session lifecycle events (creation, destruction, and errors) to aid in debugging processing issues.">
+      <option name="closed" value="true" />
+      <created>1780498544818</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1780498544818</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Update Media Effect Enhancement to 16.0.0-beta04&#10;&#10;This commit updates the `playServicesMediaEffectEnhancement` dependency version in the version catalog.&#10;&#10;Key changes:&#10;- **Dependency Update**: Bumped `playServicesMediaEffectEnhancement` from `16.0.0-beta03` to `16.0.0-beta04` in `gradle/libs.versions.toml`.">
+      <option name="closed" value="true" />
+      <created>1780653576866</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1780653576867</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Migrate to Play Services Media Effect Enhancement and implement on-demand module management&#10;&#10;This commit migrates the image enhancement implementation from a local library to the Google Play Services (GMS) `play-services-media-effect-enhancement` library. It introduces a robust workflow for checking device support, handling on-demand module installation, and managing the lifecycle of enhancement sessions.&#10;&#10;The key changes include:&#10;- **GMS Library Integration**: Updated dependencies to use `play-services-media-effect-enhancement`. The `EnhancementUtils.kt` file has been overhauled to wrap GMS Tasks in coroutines using `suspendCancellableCoroutine`, providing a more idiomatic way to handle session creation and bitmap processing.&#10;- **Dynamic Module Installation**: Implemented logic in `EnhancementViewModel` to check if the required enhancement module is installed. It now supports downloading the module on-demand with progress tracking, ensuring the app remains functional even if the ML features are not pre-installed.&#10;- **Improved Session Management**: Refactored the enhancement logic to use `EnhancementSession`. Sessions are created asynchronously and properly released when a new image is selected or the ViewModel is cleared, preventing memory leaks and resource contention.&#10;- **Enhanced UI Feedback**: The `ImageComparisonScreen` now displays the module status (e.g., &quot;Checking support,&quot; &quot;Installing&quot;) and provides a `LinearProgressIndicator` during the initial download. Specific error messages are now surface-level for both installation and processing failures.&#10;- **Native Library &amp; Manifest Updates**: Added required `uses-native-library` entries for OpenCL and GLES to the manifest to ensure compatibility across different hardware architectures (including Pixel and Automotive).&#10;- **Tooling Updates**: Updated the Kotlin version and moved the JVM toolchain to version 17 to align with modern development standards." />
+    <MESSAGE value="Implement job cancellation and UI controls for image enhancement&#10;&#10;This commit introduces the ability for users to cancel ongoing image enhancement operations and improves task management within the ViewModel to prevent race conditions.&#10;&#10;The key changes include:&#10;- **Active Job Tracking**: The `EnhancementViewModel` now maintains a reference to the `activeJob` for image selection and processing tasks. This ensures that selecting a new image automatically cancels any previous, unfinished operations.&#10;- **Manual Cancellation Logic**: Added a `cancelOperation` function to the ViewModel. It explicitly cancels the current coroutine job, releases the `EnhancementSession`, and resets the UI state to a non-loading, clean state.&#10;- **Context-Aware Action Button**: The UI in `ImageComparisonScreen` now dynamically toggles between an &quot;AI Enhance&quot; button and a &quot;Cancel&quot; button based on the current loading state. The &quot;Cancel&quot; button uses the error color scheme to provide a clear visual cue for stopping the process.&#10;- **Robust State Management**: Refined the loading logic to ensure the UI remains responsive and consistent when operations are interrupted or canceled." />
+    <MESSAGE value="Integrate BenchmarkTracker for performance monitoring&#10;&#10;This commit integrates the `BenchmarkTracker` utility into the image enhancement workflow to measure and log performance metrics across the session lifecycle.&#10;&#10;Key changes include:&#10;- **Performance Instrumentation**: Added tracking points in `EnhancementViewModel` to record timestamps for session creation, bitmap processing, and resource release.&#10;- **Metadata Tracking**: Enhanced the benchmarking logic to capture input/output resolutions and selected enhancement options, providing context for the latency metrics.&#10;- **Reporting Logic**: Updated `BenchmarkTracker` to expose the `printSummary` function and automatically clear previous data when a new session begins.&#10;- **Lifecycle Hooks**: Integrated tracking for cancellation and session destruction within `EnhancementUtils` and the ViewModel's `onCleared` and `cancelOperation` methods.&#10;- **Device Support**: Updated IDE configuration to include support for Pixel Tablet (API 36) in device streaming." />
+    <MESSAGE value="Refactor image enhancement to use callback-based SDK APIs&#10;&#10;This commit transitions the image enhancement logic from a suspend-based wrapper to the underlying callback-based API provided by the enhancement library. This ensures more direct integration with the SDK's lifecycle and processing model.&#10;&#10;The key changes include:&#10;- **Callback-driven Processing**: Refactored `processImage` to use `EnhancementCallback`. The UI state updates for the enhanced bitmap and loading status are now handled within the `onBitmapProcessed` callback.&#10;- **Asynchronous Session Creation**: Introduced `createSessionCallback`, which utilizes `EnhancementSessionCallback` to manage the asynchronous creation of an `EnhancementSession`.&#10;- **Explicit Session Release**: Added a `releaseSession` function to allow for explicit cleanup of the enhancement session and related UI state.&#10;- **Enhanced Lifecycle Management**: Updated `cancelOperation` and `onImageSelected` to ensure sessions are properly released and benchmark metrics are recorded accurately during cancellations.&#10;- **Improved Benchmarking**: Refined the placement of `BenchmarkTracker` calls to more accurately capture session creation overhead and pure enhancement latency.&#10;- **Logging and Debugging**: Added targeted logging for session lifecycle events (creation, destruction, and errors) to aid in debugging processing issues." />
+    <MESSAGE value="Update Media Effect Enhancement to 16.0.0-beta04&#10;&#10;This commit updates the `playServicesMediaEffectEnhancement` dependency version in the version catalog.&#10;&#10;Key changes:&#10;- **Dependency Update**: Bumped `playServicesMediaEffectEnhancement` from `16.0.0-beta03` to `16.0.0-beta04` in `gradle/libs.versions.toml`." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update Media Effect Enhancement to 16.0.0-beta04&#10;&#10;This commit updates the `playServicesMediaEffectEnhancement` dependency version in the version catalog.&#10;&#10;Key changes:&#10;- **Dependency Update**: Bumped `playServicesMediaEffectEnhancement` from `16.0.0-beta03` to `16.0.0-beta04` in `gradle/libs.versions.toml`." />
+  </component>
+  <component name="play_dynamic_filters_status">
+    <option name="appIdToCheckInfo">
+      <map>
+        <entry key="com.android.imagesuperresolution">
+          <value>
+            <CheckInfo lastCheckTimestamp="1781099046251" />
+          </value>
+        </entry>
+        <entry key="com.android.imagesuperresolution.test">
+          <value>
+            <CheckInfo lastCheckTimestamp="1781099046323" />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

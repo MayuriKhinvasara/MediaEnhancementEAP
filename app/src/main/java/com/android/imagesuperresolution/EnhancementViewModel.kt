@@ -225,7 +225,16 @@ class EnhancementViewModel(application: Application) : AndroidViewModel(applicat
 
             val options = getEnhancementOptionsFor(bitmap, _uiState.value.selectedOptions)
             val enhancementStartTime = System.currentTimeMillis()
+            
+            BenchmarkTracker.recordEnhancementStart()
             val enhancedBitmap = session.processBitmapAsync(bitmap, options)
+            
+            val enhancedRes = "${enhancedBitmap.width}x${enhancedBitmap.height}"
+            val originalRes = "${bitmap.width}x${bitmap.height}"
+            val optionsStr = _uiState.value.selectedOptions.joinToString(", ")
+            BenchmarkTracker.setMetadata(originalRes, enhancedRes, optionsStr)
+            BenchmarkTracker.recordEnhancementEnd(true)
+            
             val enhancementLatency = System.currentTimeMillis() - enhancementStartTime
 
             _uiState.update {
@@ -234,12 +243,30 @@ class EnhancementViewModel(application: Application) : AndroidViewModel(applicat
                 )
             }
         } catch (e: Exception) {
+            BenchmarkTracker.recordEnhancementEnd(false)
             Log.e(TAG, "Enhancement failed: ${e.message}", e)
+            val errorMessage = if (e.message?.contains("57501") == true) {
+                "Enhancement failed: Invalid configuration or missing arguments (57501). Ensure at least one enhancement option is selected."
+            } else {
+                "Enhancement failed: ${e.message}"
+            }
             _uiState.update {
                 it.copy(
-                    enhancedImage = null, enhancementError = "Enhancement failed: ${e.message}"
+                    enhancedImage = null, enhancementError = errorMessage
                 )
             }
+        }
+    }
+
+    fun releaseSession() {
+        BenchmarkTracker.recordReleaseStart()
+        enhancementSession?.release()
+        enhancementSession = null
+
+        _uiState.update {
+            it.copy(
+                enhancedImage = null
+            )
         }
     }
 
@@ -248,14 +275,14 @@ class EnhancementViewModel(application: Application) : AndroidViewModel(applicat
         selectedOptions: Set<String>
     ): EnhancementOptions {
         return EnhancementOptions(
-            bitmap.width,
-            bitmap.height,
-            _uiState.value.enhancementMode,
-            "Tonemap" in selectedOptions,
-            "Deblur & DeNoise" in selectedOptions,
-            false,
-            "Upscale" in selectedOptions,
-            false
+            width = bitmap.width,
+            height = bitmap.height,
+            enhancementMode = _uiState.value.enhancementMode,
+            isTonemappingEnabled = "Tonemap" in selectedOptions,
+            isDeblurAndDenoisePhotoEnabled = "Deblur & DeNoise" in selectedOptions,
+            isDeblurAndDenoiseVideoEnabled = false,
+            isUpscalePhotoEnabled = "Image Upscale" in selectedOptions,
+            isUpscaleVideoEnabled = "Video Upscale" in selectedOptions
         )
     }
 
