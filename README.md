@@ -52,6 +52,9 @@ You can run the tests from Android Studio by right-clicking on `EnhancementViewM
 > [!NOTE]
 > The benchmark test script automatically grants `MANAGE_EXTERNAL_STORAGE` to the app shell at runtime to read files from `/sdcard/Pictures/` and write report documents.
 
+> [!IMPORTANT]
+> **Prerequisite:** You must run the application manually on the device *at least once* before starting the automated benchmarks. This ensures that the Google Play services enhancement modules are fully downloaded/installed, and that the app is initialized with the necessary permissions. Failing to do this may cause the benchmark tests to fail during session initialization.
+
 ---
 
 ## 3. Retrieving the Markdown Report
