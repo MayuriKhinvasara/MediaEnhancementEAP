@@ -16,27 +16,21 @@ The benchmark test reads input image files directly from the device's public `Pi
 Before running the test suite, you must structure and push your benchmark images to the device using the following setup:
 
 ### Directory Structure
-Create a directory named `Enhance` in your device's `Pictures` folder, with separate resolution subfolders:
+Create a directory named `Enhance` in your device's `Pictures` folder, and place all benchmark images directly inside it:
 
 ```text
 /sdcard/Pictures/Enhance/
-├── 1920x1080/
-│   ├── video_015_1920x1080.png
-│   └── video_016_1920x1080.png
-└── 1280x720/
-    ├── video_015_1280x720.png
-    └── video_016_1280x720.png
+├── video_015_1920x1080.png
+├── video_016_1920x1080.png
+├── video_015_1280x720.png
+└── video_016_1280x720.png
 ```
 
 ### Pushing Images via ADB
-You can use `adb push` to copy files from your host machine onto the device:
+You can use `adb push` to copy the files from your host machine onto the device:
 
 ```bash
-# Push 1080p images
-adb push path/to/local/1920x1080/ /sdcard/Pictures/Enhance/1920x1080/
-
-# Push 720p images
-adb push path/to/local/1280x720/ /sdcard/Pictures/Enhance/1280x720/
+adb push path/to/local/images/. /sdcard/Pictures/Enhance/
 ```
 
 ---

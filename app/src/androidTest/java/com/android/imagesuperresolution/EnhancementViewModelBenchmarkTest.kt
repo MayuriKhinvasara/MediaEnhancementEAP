@@ -65,41 +65,34 @@ class EnhancementViewModelBenchmarkTest {
         report.appendLine("3. **Cold-start overhead:** The ~3.3s Tonemap latency includes the Vulkan/OpenCL shader compilation because the ML session is destroyed and recreated for each image.")
         report.appendLine()
         
-        val resolutions = listOf("1920x1080", "1280x720")
+        report.appendLine("| Image Name | Original Size | Enhanced Size | Tonemap Only (ms) | Tonemap + Image Upscale (ms) | Tonemap + Video Upscale (ms) |")
+        report.appendLine("|---|---|---|---|---|---|")
 
-        for (res in resolutions) {
-            val resDir = File(baseDir, res)
-            if (!resDir.exists() || resDir.listFiles().isNullOrEmpty()) {
-                Log.w("Benchmark", "Directory not found or empty: ${resDir.absolutePath}")
-                continue
-            }
-
-            report.appendLine("### Resolution: $res")
-            report.appendLine("| Image Name | Original Size | Enhanced Size | Tonemap Only (ms) | Tonemap + Image Upscale (ms) | Tonemap + Video Upscale (ms) |")
-            report.appendLine("|---|---|---|---|---|---|")
-
-            val images = resDir.listFiles()?.filter { it.extension.lowercase() in listOf("jpg", "png", "jpeg") }?.sortedBy { it.name } ?: emptyList()
+        val images = baseDir.listFiles()?.filter { it.extension.lowercase() in listOf("jpg", "png", "jpeg") }?.sortedBy { it.name } ?: emptyList()
+        
+        for (image in images) {
+            Log.i("Benchmark", "Starting benchmark for image: ${image.name}")
             
-            for (image in images) {
-                Log.i("Benchmark", "Starting benchmark for image: ${image.name}")
-                
-                // TEST 0: Tonemap Only
-                val (tonemapStr, tonemapSize) = measureViewModelLatency(application, image.absolutePath, "Tonemap")
-                
-                // TEST 1: Photo Upscale (+Tonemap)
-                val (photoStr, photoSize) = measureViewModelLatency(application, image.absolutePath, "Image Upscale")
-                
-                // TEST 2: Video Upscale (+Tonemap)
-                val (videoStr, videoSize) = measureViewModelLatency(application, image.absolutePath, "Video Upscale")
+            // Query original dimensions dynamically without loading full bitmap
+            val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeFile(image.absolutePath, options)
+            val originalSize = "${options.outWidth}x${options.outHeight}"
+            
+            // TEST 0: Tonemap Only
+            val (tonemapStr, tonemapSize) = measureViewModelLatency(application, image.absolutePath, "Tonemap")
+            
+            // TEST 1: Photo Upscale (+Tonemap)
+            val (photoStr, photoSize) = measureViewModelLatency(application, image.absolutePath, "Image Upscale")
+            
+            // TEST 2: Video Upscale (+Tonemap)
+            val (videoStr, videoSize) = measureViewModelLatency(application, image.absolutePath, "Video Upscale")
 
-                // All successful outputs will have the same dimensions because we pass width/height directly.
-                // We pick the first successful dimension as the representative 'Enhanced Size'.
-                val enhSize = if (tonemapSize != "N/A") tonemapSize else (if (photoSize != "N/A") photoSize else videoSize)
+            // Pick the first successful dimension as the representative 'Enhanced Size'
+            val enhSize = if (tonemapSize != "N/A") tonemapSize else (if (photoSize != "N/A") photoSize else videoSize)
 
-                report.appendLine("| ${image.name} | $res | $enhSize | $tonemapStr | $photoStr | $videoStr |")
-            }
-            report.appendLine()
+            report.appendLine("| ${image.name} | $originalSize | $enhSize | $tonemapStr | $photoStr | $videoStr |")
         }
+        report.appendLine()
 
         val finalReport = report.toString()
         reportFile.writeText(finalReport)
