@@ -89,7 +89,7 @@ class EnhancementViewModelBenchmarkTest {
         report.appendLine(mainHeaders.joinToString(" | ", "| ", " |"))
         report.appendLine(mainHeaders.map { "---" }.joinToString(" | ", "| ", " |"))
 
-        val summaryData = mutableMapOf<String, MutableList<List<Long?>>>()
+        val summaryData = mutableMapOf<String, MutableList<Pair<String, List<Long?>>>>()
         val images = baseDir.listFiles()?.filter { it.extension.lowercase() in listOf("jpg", "png", "jpeg") }?.sortedBy { it.name } ?: emptyList()
         
         for (image in images) {
@@ -117,15 +117,16 @@ class EnhancementViewModelBenchmarkTest {
                 latencyResults.add(latencyStr.toLongOrNull())
             }
 
-            report.appendLine("| ${image.name} | $originalSize | $enhSize | ${resultCells.joinToString(" | ")} |")
+            // Print image with absolute path in the main table
+            report.appendLine("| ${image.absolutePath} | $originalSize | $enhSize | ${resultCells.joinToString(" | ")} |")
 
-            // Collect latencies for summary averages
-            summaryData.getOrPut(originalSize) { mutableListOf() }.add(latencyResults)
+            // Collect latencies and image names for summary table
+            summaryData.getOrPut(originalSize) { mutableListOf() }.add(Pair(image.name, latencyResults))
         }
         report.appendLine()
 
-        report.appendLine("## Summary Table (Averages by Resolution)")
-        val summaryHeaders = mutableListOf("Resolution")
+        report.appendLine("## Summary Table (Sorted by Resolution)")
+        val summaryHeaders = mutableListOf("Resolution", "Image Name")
         summaryHeaders.addAll(displayHeaders)
         report.appendLine(summaryHeaders.joinToString(" | ", "| ", " |"))
         report.appendLine(summaryHeaders.map { "---" }.joinToString(" | ", "| ", " |"))
@@ -147,15 +148,14 @@ class EnhancementViewModelBenchmarkTest {
 
         for (res in sortedResolutions) {
             val runs = summaryData[res] ?: emptyList()
-            val avgCells = mutableListOf<String>()
-
-            for (i in testOptions.indices) {
-                val latenciesForOption = runs.mapNotNull { it.getOrNull(i) }
-                val avg = if (latenciesForOption.isNotEmpty()) "${latenciesForOption.average().toInt()}" else "N/A"
-                avgCells.add(avg)
+            for (run in runs) {
+                val imageName = run.first
+                val latencies = run.second
+                val cells = latencies.map { lat ->
+                    if (lat != null) "$lat" else "N/A"
+                }
+                report.appendLine("| $res | $imageName | ${cells.joinToString(" | ")} |")
             }
-
-            report.appendLine("| $res | ${avgCells.joinToString(" | ")} |")
         }
         report.appendLine()
 
