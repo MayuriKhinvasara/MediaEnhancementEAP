@@ -4,6 +4,8 @@ This project contains an instrumented Android benchmark test suite (`Enhancement
 - **Tonemap Only**
 - **Tonemap + Image Upscale**
 - **Tonemap + Video Upscale**
+- **Image Upscale Only**
+- **Video Upscale Only**
 
 The benchmarks output a clean markdown report compiling latency timings, output sizes, key findings, and error messages for each run.
 
