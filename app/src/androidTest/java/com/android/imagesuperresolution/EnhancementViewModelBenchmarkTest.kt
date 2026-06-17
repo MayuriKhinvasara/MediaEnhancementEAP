@@ -65,10 +65,23 @@ class EnhancementViewModelBenchmarkTest {
         report.appendLine("3. **Cold-start overhead:** The ~3.3s Tonemap latency includes the Vulkan/OpenCL shader compilation because the ML session is destroyed and recreated for each image.")
         report.appendLine()
         
-        report.appendLine("| Image Name | Original Size | Enhanced Size | Tonemap | Tonemap, Image Upscale | Tonemap, Video Upscale |")
-        report.appendLine("|---|---|---|---|---|---|")
+        val testOptions = listOf("Tonemap", "Image Upscale", "Video Upscale")
+        val displayHeaders = testOptions.map { option ->
+            when (option) {
+                "Tonemap" -> "Tonemap"
+                "Image Upscale" -> "Tonemap, Image Upscale"
+                "Video Upscale" -> "Tonemap, Video Upscale"
+                else -> option
+            }
+        }
 
-        val summaryData = mutableMapOf<String, MutableList<Triple<Long?, Long?, Long?>>>()
+        // Build main table header
+        val mainHeaders = mutableListOf("Image Name", "Original Size", "Enhanced Size")
+        mainHeaders.addAll(displayHeaders)
+        report.appendLine(mainHeaders.joinToString(" | ", "| ", " |"))
+        report.appendLine(mainHeaders.map { "---" }.joinToString(" | ", "| ", " |"))
+
+        val summaryData = mutableMapOf<String, MutableList<List<Long?>>>()
         val images = baseDir.listFiles()?.filter { it.extension.lowercase() in listOf("jpg", "png", "jpeg") }?.sortedBy { it.name } ?: emptyList()
         
         for (image in images) {
@@ -79,36 +92,35 @@ class EnhancementViewModelBenchmarkTest {
             android.graphics.BitmapFactory.decodeFile(image.absolutePath, options)
             val originalSize = "${options.outWidth}x${options.outHeight}"
             
-            // TEST 0: Tonemap Only
-            val (tonemapStr, tonemapSize, tonemapFile) = measureViewModelLatency(application, image.absolutePath, "Tonemap")
-            
-            // TEST 1: Photo Upscale (+Tonemap)
-            val (photoStr, photoSize, photoFile) = measureViewModelLatency(application, image.absolutePath, "Image Upscale")
-            
-            // TEST 2: Video Upscale (+Tonemap)
-            val (videoStr, videoSize, videoFile) = measureViewModelLatency(application, image.absolutePath, "Video Upscale")
+            val resultCells = mutableListOf<String>()
+            val latencyResults = mutableListOf<Long?>()
+            var enhSize = "N/A"
 
-            // Pick the first successful dimension as the representative 'Enhanced Size'
-            val enhSize = if (tonemapSize != "N/A") tonemapSize else (if (photoSize != "N/A") photoSize else videoSize)
+            for (option in testOptions) {
+                val (latencyStr, outputSize, savedFile) = measureViewModelLatency(application, image.absolutePath, option)
+                
+                if (outputSize != "N/A") {
+                    enhSize = outputSize
+                }
+                
+                val cell = if (savedFile != null) "[$latencyStr](./EnhancedScreenshots/$savedFile)" else latencyStr
+                resultCells.add(cell)
+                
+                latencyResults.add(latencyStr.toLongOrNull())
+            }
 
-            // Link latencies to output image files if they were successfully processed
-            val tonemapCell = if (tonemapFile != null) "[$tonemapStr](./EnhancedScreenshots/$tonemapFile)" else tonemapStr
-            val photoCell = if (photoFile != null) "[$photoStr](./EnhancedScreenshots/$photoFile)" else photoStr
-            val videoCell = if (videoFile != null) "[$videoStr](./EnhancedScreenshots/$videoFile)" else videoStr
-
-            report.appendLine("| ${image.name} | $originalSize | $enhSize | $tonemapCell | $photoCell | $videoCell |")
+            report.appendLine("| ${image.name} | $originalSize | $enhSize | ${resultCells.joinToString(" | ")} |")
 
             // Collect latencies for summary averages
-            val tLat = tonemapStr.toLongOrNull()
-            val pLat = photoStr.toLongOrNull()
-            val vLat = videoStr.toLongOrNull()
-            summaryData.getOrPut(originalSize) { mutableListOf() }.add(Triple(tLat, pLat, vLat))
+            summaryData.getOrPut(originalSize) { mutableListOf() }.add(latencyResults)
         }
         report.appendLine()
 
         report.appendLine("## Summary Table (Averages by Resolution)")
-        report.appendLine("| Resolution | Tonemap | Tonemap, Image Upscale | Tonemap, Video Upscale |")
-        report.appendLine("|---|---|---|---|")
+        val summaryHeaders = mutableListOf("Resolution")
+        summaryHeaders.addAll(displayHeaders)
+        report.appendLine(summaryHeaders.joinToString(" | ", "| ", " |"))
+        report.appendLine(summaryHeaders.map { "---" }.joinToString(" | ", "| ", " |"))
 
         // Sort resolutions by total pixels (width * height)
         val sortedResolutions = summaryData.keys.sortedWith(Comparator { r1, r2 ->
@@ -126,16 +138,16 @@ class EnhancementViewModelBenchmarkTest {
         })
 
         for (res in sortedResolutions) {
-            val triples = summaryData[res] ?: emptyList()
-            val tonemapList = triples.mapNotNull { it.first }
-            val photoList = triples.mapNotNull { it.second }
-            val videoList = triples.mapNotNull { it.third }
+            val runs = summaryData[res] ?: emptyList()
+            val avgCells = mutableListOf<String>()
 
-            val avgTonemap = if (tonemapList.isNotEmpty()) "${tonemapList.average().toInt()}" else "N/A"
-            val avgPhoto = if (photoList.isNotEmpty()) "${photoList.average().toInt()}" else "N/A"
-            val avgVideo = if (videoList.isNotEmpty()) "${videoList.average().toInt()}" else "N/A"
+            for (i in testOptions.indices) {
+                val latenciesForOption = runs.mapNotNull { it.getOrNull(i) }
+                val avg = if (latenciesForOption.isNotEmpty()) "${latenciesForOption.average().toInt()}" else "N/A"
+                avgCells.add(avg)
+            }
 
-            report.appendLine("| $res | $avgTonemap | $avgPhoto | $avgVideo |")
+            report.appendLine("| $res | ${avgCells.joinToString(" | ")} |")
         }
         report.appendLine()
 
