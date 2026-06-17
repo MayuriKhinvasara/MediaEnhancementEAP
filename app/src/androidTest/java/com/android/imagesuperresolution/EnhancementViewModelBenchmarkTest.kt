@@ -65,12 +65,20 @@ class EnhancementViewModelBenchmarkTest {
         report.appendLine("3. **Cold-start overhead:** The ~3.3s Tonemap latency includes the Vulkan/OpenCL shader compilation because the ML session is destroyed and recreated for each image.")
         report.appendLine()
         
-        val testOptions = listOf("Tonemap", "Image Upscale", "Video Upscale")
+        val testOptions = listOf(
+            "Tonemap",
+            "Image Upscale",
+            "Video Upscale",
+            "Image Upscale Only",
+            "Video Upscale Only"
+        )
         val displayHeaders = testOptions.map { option ->
             when (option) {
                 "Tonemap" -> "Tonemap"
                 "Image Upscale" -> "Tonemap, Image Upscale"
                 "Video Upscale" -> "Tonemap, Video Upscale"
+                "Image Upscale Only" -> "Image Upscale Only"
+                "Video Upscale Only" -> "Video Upscale Only"
                 else -> option
             }
         }
@@ -179,10 +187,28 @@ class EnhancementViewModelBenchmarkTest {
         // Wait for module to be ready
         viewModel.uiState.first { it.isModuleReady || it.moduleInstallError != null }
         
-        // Unselect default Tonemap and set the exact ones we want if needed. 
-        // Tonemap is already set by default, so we just toggle Upscale Option.
-        if (upscaleOption !in viewModel.uiState.value.selectedOptions) {
-            viewModel.onOptionSelected(upscaleOption)
+        // Resolve the exact target options list
+        val targetOptionsList = when (upscaleOption) {
+            "Tonemap" -> listOf("Tonemap")
+            "Image Upscale" -> listOf("Tonemap", "Image Upscale")
+            "Video Upscale" -> listOf("Tonemap", "Video Upscale")
+            "Image Upscale Only" -> listOf("Image Upscale")
+            "Video Upscale Only" -> listOf("Video Upscale")
+            else -> listOf(upscaleOption)
+        }
+
+        // Toggle off options that are not in targetOptionsList
+        val currentOptions = viewModel.uiState.value.selectedOptions
+        for (opt in currentOptions) {
+            if (opt !in targetOptionsList) {
+                viewModel.onOptionSelected(opt)
+            }
+        }
+        // Toggle on target options that are not currently selected
+        for (opt in targetOptionsList) {
+            if (opt !in viewModel.uiState.value.selectedOptions) {
+                viewModel.onOptionSelected(opt)
+            }
         }
 
         // Load Image
