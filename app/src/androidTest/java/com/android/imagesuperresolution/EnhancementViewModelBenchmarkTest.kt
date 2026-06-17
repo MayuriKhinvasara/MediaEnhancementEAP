@@ -65,9 +65,10 @@ class EnhancementViewModelBenchmarkTest {
         report.appendLine("3. **Cold-start overhead:** The ~3.3s Tonemap latency includes the Vulkan/OpenCL shader compilation because the ML session is destroyed and recreated for each image.")
         report.appendLine()
         
-        report.appendLine("| Image Name | Original Size | Enhanced Size | Tonemap Only (ms) | Tonemap + Image Upscale (ms) | Tonemap + Video Upscale (ms) |")
+        report.appendLine("| Image Name | Original Size | Enhanced Size | Tonemap | Tonemap, Image Upscale | Tonemap, Video Upscale |")
         report.appendLine("|---|---|---|---|---|---|")
 
+        val summaryData = mutableMapOf<String, MutableList<Triple<Long?, Long?, Long?>>>()
         val images = baseDir.listFiles()?.filter { it.extension.lowercase() in listOf("jpg", "png", "jpeg") }?.sortedBy { it.name } ?: emptyList()
         
         for (image in images) {
@@ -79,18 +80,62 @@ class EnhancementViewModelBenchmarkTest {
             val originalSize = "${options.outWidth}x${options.outHeight}"
             
             // TEST 0: Tonemap Only
-            val (tonemapStr, tonemapSize) = measureViewModelLatency(application, image.absolutePath, "Tonemap")
+            val (tonemapStr, tonemapSize, tonemapFile) = measureViewModelLatency(application, image.absolutePath, "Tonemap")
             
             // TEST 1: Photo Upscale (+Tonemap)
-            val (photoStr, photoSize) = measureViewModelLatency(application, image.absolutePath, "Image Upscale")
+            val (photoStr, photoSize, photoFile) = measureViewModelLatency(application, image.absolutePath, "Image Upscale")
             
             // TEST 2: Video Upscale (+Tonemap)
-            val (videoStr, videoSize) = measureViewModelLatency(application, image.absolutePath, "Video Upscale")
+            val (videoStr, videoSize, videoFile) = measureViewModelLatency(application, image.absolutePath, "Video Upscale")
 
             // Pick the first successful dimension as the representative 'Enhanced Size'
             val enhSize = if (tonemapSize != "N/A") tonemapSize else (if (photoSize != "N/A") photoSize else videoSize)
 
-            report.appendLine("| ${image.name} | $originalSize | $enhSize | $tonemapStr | $photoStr | $videoStr |")
+            // Link latencies to output image files if they were successfully processed
+            val tonemapCell = if (tonemapFile != null) "[$tonemapStr](./EnhancedScreenshots/$tonemapFile)" else tonemapStr
+            val photoCell = if (photoFile != null) "[$photoStr](./EnhancedScreenshots/$photoFile)" else photoStr
+            val videoCell = if (videoFile != null) "[$videoStr](./EnhancedScreenshots/$videoFile)" else videoStr
+
+            report.appendLine("| ${image.name} | $originalSize | $enhSize | $tonemapCell | $photoCell | $videoCell |")
+
+            // Collect latencies for summary averages
+            val tLat = tonemapStr.toLongOrNull()
+            val pLat = photoStr.toLongOrNull()
+            val vLat = videoStr.toLongOrNull()
+            summaryData.getOrPut(originalSize) { mutableListOf() }.add(Triple(tLat, pLat, vLat))
+        }
+        report.appendLine()
+
+        report.appendLine("## Summary Table (Averages by Resolution)")
+        report.appendLine("| Resolution | Tonemap | Tonemap, Image Upscale | Tonemap, Video Upscale |")
+        report.appendLine("|---|---|---|---|")
+
+        // Sort resolutions by total pixels (width * height)
+        val sortedResolutions = summaryData.keys.sortedWith(Comparator { r1, r2 ->
+            val parts1 = r1.split('x')
+            val parts2 = r2.split('x')
+            if (parts1.size == 2 && parts2.size == 2) {
+                val w1 = parts1[0].toIntOrNull() ?: 0
+                val h1 = parts1[1].toIntOrNull() ?: 0
+                val w2 = parts2[0].toIntOrNull() ?: 0
+                val h2 = parts2[1].toIntOrNull() ?: 0
+                (w1 * h1).compareTo(w2 * h2)
+            } else {
+                r1.compareTo(r2)
+            }
+        })
+
+        for (res in sortedResolutions) {
+            val triples = summaryData[res] ?: emptyList()
+            val tonemapList = triples.mapNotNull { it.first }
+            val photoList = triples.mapNotNull { it.second }
+            val videoList = triples.mapNotNull { it.third }
+
+            val avgTonemap = if (tonemapList.isNotEmpty()) "${tonemapList.average().toInt()}" else "N/A"
+            val avgPhoto = if (photoList.isNotEmpty()) "${photoList.average().toInt()}" else "N/A"
+            val avgVideo = if (videoList.isNotEmpty()) "${videoList.average().toInt()}" else "N/A"
+
+            report.appendLine("| $res | $avgTonemap | $avgPhoto | $avgVideo |")
         }
         report.appendLine()
 
@@ -116,7 +161,7 @@ class EnhancementViewModelBenchmarkTest {
         application: Application,
         imagePath: String,
         upscaleOption: String
-    ): Pair<String, String> {
+    ): Triple<String, String, String?> {
         val viewModel = EnhancementViewModel(application)
         
         // Wait for module to be ready
@@ -138,7 +183,7 @@ class EnhancementViewModelBenchmarkTest {
         
         if (imageLoaded == null) {
             Log.e("Benchmark", "ERROR: Failed to access or load original photo: $imagePath")
-            return Pair("Load Error", "N/A")
+            return Triple("Load Error", "N/A", null)
         }
         
         Log.d("Benchmark", "Successfully accessed original photo: $imagePath")
@@ -154,13 +199,13 @@ class EnhancementViewModelBenchmarkTest {
         if (finalState == null) {
             Log.e("Benchmark", "ERROR: Enhancement timed out or hung indefinitely!")
             viewModel.releaseSession()
-            return Pair("Timeout", "N/A")
+            return Triple("Timeout", "N/A", null)
         }
         
         if (finalState.enhancementError != null) {
             Log.e("Benchmark", "ERROR: Enhancement failed: ${finalState.enhancementError}")
             viewModel.releaseSession()
-            return Pair(finalState.enhancementError.replace("\n", " ").replace("|", " "), "N/A")
+            return Triple(finalState.enhancementError.replace("\n", " ").replace("|", " "), "N/A", null)
         }
         
         val latency = finalState.enhancedImage?.latency ?: 0L
@@ -169,9 +214,33 @@ class EnhancementViewModelBenchmarkTest {
         
         Log.d("Benchmark", "Successfully processed bitmap! Latency: $latency ms")
         
+        var savedFilename: String? = null
+        if (bmp != null) {
+            val originalFile = File(imagePath)
+            val baseName = originalFile.nameWithoutExtension
+            val sanitizedOption = upscaleOption.replace(" ", "_").replace(",", "")
+            savedFilename = "${baseName}_${sanitizedOption}.png"
+            
+            // Save enhanced bitmap to public Downloads folder for report matching
+            try {
+                val dir = File("/sdcard/Download/EnhancedScreenshots")
+                if (!dir.exists()) {
+                    dir.mkdirs()
+                }
+                val destFile = File(dir, savedFilename)
+                java.io.FileOutputStream(destFile).use { out ->
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                }
+                Log.d("Benchmark", "Saved enhanced bitmap to: ${destFile.absolutePath}")
+            } catch (e: Exception) {
+                Log.e("Benchmark", "Failed to save enhanced bitmap: ${e.message}")
+                savedFilename = null
+            }
+        }
+
         // Cleanup to prevent out of memory issues when running in loop
         viewModel.releaseSession()
 
-        return Pair(latency.toString(), outputSize)
+        return Triple(latency.toString(), outputSize, savedFilename)
     }
 }
