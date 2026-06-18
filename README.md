@@ -11,47 +11,47 @@ The benchmarks output a clean markdown report compiling latency timings, output 
 
 ---
 
-## 1. Input Folder and Image Setup
+## 1. Required Setup & Developer Action Items
 
-The benchmark test reads input image files directly from the device's public `Pictures` directory. 
+Before executing the benchmark suite, you **MUST** complete the following setup actions:
 
-Before running the test suite, you must structure and push your benchmark images to the device using the following setup:
+### Action Item 1: Push Test Images to the Device
+The benchmark test reads input image files directly from a flat `Enhance` folder in the device's public `Pictures` directory.
+1. Create the `Enhance` folder inside the device's `Pictures` directory.
+2. Push all local benchmark images directly into it:
+   ```bash
+   adb push path/to/local/images/. /sdcard/Pictures/Enhance/
+   ```
+   *Note: Do not create any subfolders (like 1080p/720p) inside the `Enhance` directory.*
 
-### Directory Structure
-Create a directory named `Enhance` in your device's `Pictures` folder, and place all benchmark images directly inside it:
+### Action Item 2: Launch the App Manually Once (Play Services Prerequisite)
+You **must run the application manually on the device at least once** before triggering the automated benchmarks.
+* **Why**: The SDK dynamically downloads machine learning models and library dependencies via Google Play Services on first launch.
+* **Impact**: If you skip this, the benchmark session will fail to initialize and the tests will crash with module-loading errors.
 
-```text
-/sdcard/Pictures/Enhance/
-├── video_015_1920x1080.png
-├── video_016_1920x1080.png
-├── video_015_1280x720.png
-└── video_016_1280x720.png
-```
-
-### Pushing Images via ADB
-You can use `adb push` to copy the files from your host machine onto the device:
-
+### Action Item 3: Grant Storage Permission
+To allow the test app to read your images from public directories and save reports, grant full storage access:
 ```bash
-adb push path/to/local/images/. /sdcard/Pictures/Enhance/
+adb shell appops set com.android.imagesuperresolution MANAGE_EXTERNAL_STORAGE allow
 ```
 
 ---
 
 ## 2. Running the Benchmark
 
-You can run the tests from Android Studio by right-clicking on `EnhancementViewModelBenchmarkTest` and choosing **Run**, or via the command line:
+You can execute the benchmark test suite either directly from Android Studio or via the command line:
 
+### Option A: Running from Android Studio (Recommended)
+1. Open the project in Android Studio.
+2. In the project browser, navigate to:
+   `app/src/androidTest/java/com/android/imagesuperresolution/EnhancementViewModelBenchmarkTest.kt`
+3. Open the file, right-click on the class definition (`EnhancementViewModelBenchmarkTest`), and click **Run 'EnhancementViewModel...'** (or click the green play icon next to the class name).
+
+### Option B: Running via Command Line
+Execute the following Gradle command in the project root:
 ```bash
 ./gradlew app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.android.imagesuperresolution.EnhancementViewModelBenchmarkTest
 ```
-
-> [!NOTE]
-> The benchmark test script automatically grants `MANAGE_EXTERNAL_STORAGE` to the app shell at runtime to read files from `/sdcard/Pictures/` and write report documents.
-
-> [!IMPORTANT]
-> **Prerequisite:** You must run the application manually on the device *at least once* before starting the automated benchmarks. This ensures that the Google Play services enhancement modules are fully downloaded/installed, and that the app is initialized with the necessary permissions. Failing to do this may cause the benchmark tests to fail during session initialization.
-
----
 
 ## 3. Retrieving the Markdown Report
 
